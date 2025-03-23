@@ -31,7 +31,8 @@ jobs:
 
       - name: Login en Amazon ECR Public
         run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+          aws ecr-public get-login-password --region us-east-1 | \
+          docker login --username AWS --password-stdin public.ecr.aws/r7c1c8z5
 
       - name: Construir y subir imagen de Express a ECR Public
         run: |
