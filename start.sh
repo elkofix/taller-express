@@ -1,5 +1,13 @@
 #!/bin/bash
 
+echo "Verificando si Docker está instalado..."
+
+# Verificar si Docker está instalado
+if ! command -v docker &>/dev/null; then
+    echo "Docker no está instalado. Por favor, instálelo antes de continuar."
+    exit 1
+fi
+
 echo "Verificando si Docker está corriendo..."
 
 # Verificar si Docker está ejecutándose
