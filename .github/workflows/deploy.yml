@@ -11,7 +11,7 @@ env:
   ECR_REPOSITORY_EXPRESS: express-app
   ECS_CLUSTER: my-first-cluster
   ECS_SECURITY_GROUP: sg-02c3702cfa8399f6e
-  ECS_SUBNET: subnet-0123456789abcdef  # ⚠️ Ajusta esto con tu subnet real
+  ECS_SUBNET: subnet-0be06e3f7707dadb7
 
 jobs:
   deploy:
