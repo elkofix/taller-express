@@ -103,25 +103,18 @@ jobs:
               sleep 10
             done
           fi
-      - name: Obtener una subnet de la VPC del cluster
-        run: |
-          ECS_VPC_ID=$(aws ecs describe-clusters --clusters $ECS_CLUSTER \
-            --query 'clusters[0].vpcId' --output text)
-
-          ECS_SUBNET=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$ECS_VPC_ID" \
-            --query 'Subnets[0].SubnetId' --output text)
-
-          echo "Usando subnet: $ECS_SUBNET"
-          echo "ECS_SUBNET=$ECS_SUBNET" >> $GITHUB_ENV
-
       - name: Ejecutar una nueva tarea en ECS con la misma ENI
         run: |
+          SUBNETS=$(aws ec2 describe-subnets \
+          --filters "Name=vpc-id,Values=vpc-0ef01fcfe0e63f3b1" \
+          --query "Subnets[*].SubnetId" \
+          --output text)
           if [ -n "$ENI_ACTUAL" ]; then
             echo "Usando la misma ENI para mantener la IP..."
-            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=DISABLED}"
+            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
           else
             echo "Asignando nueva ENI..."
-            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
+            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
           fi
 
           TASK_ARN=$(aws ecs run-task --cluster $ECS_CLUSTER \
