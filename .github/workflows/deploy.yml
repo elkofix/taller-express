@@ -1,0 +1,53 @@
+name: Deploy Express + MongoDB to AWS ECS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY_EXPRESS: express-app
+  ECR_REPOSITORY_MONGO: mongo-db
+  ECS_CLUSTER: my-cluster
+  ECS_SERVICE: express-service
+  ECS_TASK_DEFINITION: .aws/ecs-task-definition.json
+  CONTAINER_NAME_EXPRESS: express_app
+  CONTAINER_NAME_MONGO: mongo
+
+jobs:
+  deploy:
+    name: Build & Deploy to AWS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Configurar AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login en Amazon ECR
+        id: login-ecr
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com
+
+      - name: Construir y subir imagen de Express
+        run: |
+          docker build -t $ECR_REPOSITORY_EXPRESS ./express
+          docker tag $ECR_REPOSITORY_EXPRESS:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_EXPRESS:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_EXPRESS:latest
+
+      - name: Construir y subir imagen de MongoDB
+        run: |
+          docker build -t $ECR_REPOSITORY_MONGO ./mongo-db
+          docker tag $ECR_REPOSITORY_MONGO:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_MONGO:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY_MONGO:latest
+
+      - name: Actualizar definición de tarea ECS
+        run: |
+          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
