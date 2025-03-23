@@ -36,8 +36,17 @@ jobs:
 
       - name: Construir y subir imagen de Express a ECR Public
         run: |
-          docker build -t $ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_EXPRESS:latest ./express
-          docker push $ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_EXPRESS:latest
+          IMAGE_TAG=latest
+          IMAGE_URL=$ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_EXPRESS:$IMAGE_TAG
+          
+          docker build -t $IMAGE_URL ./express
+          docker push $IMAGE_URL
+          
+          echo "IMAGE_URL=$IMAGE_URL" >> $GITHUB_ENV
+
+      - name: Imprimir URL de la imagen subida
+        run: |
+          echo "La imagen está disponible en: $IMAGE_URL"
 
       - name: Obtener la última versión de la tarea
         run: |
@@ -48,9 +57,51 @@ jobs:
             --output text)
           echo "LATEST_TASK_DEFINITION=$LATEST_TASK_DEFINITION" >> $GITHUB_ENV
 
-      - name: Ejecutar una tarea en ECS sin servicio
+      - name: Verificar si hay tareas en ejecución y detenerlas
         run: |
-          aws ecs run-task --cluster $ECS_CLUSTER \
+          RUNNING_TASKS=$(aws ecs list-tasks --cluster $ECS_CLUSTER --desired-status RUNNING --query 'taskArns' --output text)
+          
+          if [ -n "$RUNNING_TASKS" ]; then
+            echo "Deteniendo tareas en ejecución..."
+            for TASK in $RUNNING_TASKS; do
+              aws ecs stop-task --cluster $ECS_CLUSTER --task $TASK
+            done
+          else
+            echo "No hay tareas en ejecución."
+          fi
+
+      - name: Ejecutar una nueva tarea en ECS
+        run: |
+          TASK_ARN=$(aws ecs run-task --cluster $ECS_CLUSTER \
             --task-definition $LATEST_TASK_DEFINITION \
             --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
+            --network-configuration "awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}" \
+            --query 'tasks[0].taskArn' --output text)
+          
+          echo "TASK_ARN=$TASK_ARN" >> $GITHUB_ENV
+
+      - name: Esperar a que la tarea obtenga una IP pública
+        run: |
+          echo "Esperando a que la tarea tenga una IP pública..."
+          
+          for i in {1..10}; do
+            NETWORK_INTERFACE_ID=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $TASK_ARN \
+              --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text)
+            
+            if [ -n "$NETWORK_INTERFACE_ID" ]; then
+              break
+            fi
+            echo "Esperando 5 segundos..."
+            sleep 5
+          done
+
+          echo "NETWORK_INTERFACE_ID=$NETWORK_INTERFACE_ID" >> $GITHUB_ENV
+
+      - name: Obtener y mostrar la IP pública de la tarea
+        run: |
+          PUBLIC_IP=$(aws ec2 describe-network-interfaces \
+            --network-interface-ids $NETWORK_INTERFACE_ID \
+            --query 'NetworkInterfaces[0].Association.PublicIp' \
+            --output text)
+
+          echo "La IP pública de la tarea es: $PUBLIC_IP"
