@@ -66,8 +66,25 @@ jobs:
             for TASK in $RUNNING_TASKS; do
               aws ecs stop-task --cluster $ECS_CLUSTER --task $TASK
             done
+            echo "TASKS_BEING_STOPPED=$RUNNING_TASKS" >> $GITHUB_ENV
           else
             echo "No hay tareas en ejecución."
+          fi
+
+      - name: Esperar a que la tarea anterior se detenga completamente
+        run: |
+          if [ -n "$TASKS_BEING_STOPPED" ]; then
+            for i in {1..10}; do
+              STOPPED_TASKS=$(aws ecs list-tasks --cluster $ECS_CLUSTER --desired-status STOPPED --query 'taskArns' --output text)
+              
+              if [ "$STOPPED_TASKS" == "$TASKS_BEING_STOPPED" ]; then
+                echo "Las tareas se han detenido completamente."
+                break
+              fi
+              
+              echo "Esperando 10 segundos para verificar nuevamente..."
+              sleep 10
+            done
           fi
 
       - name: Ejecutar una nueva tarea en ECS
