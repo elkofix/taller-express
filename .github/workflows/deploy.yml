@@ -10,9 +10,8 @@ env:
   ECR_PUBLIC_REGISTRY: public.ecr.aws/r7c1c8z5
   ECR_REPOSITORY_EXPRESS: express-app
   ECS_CLUSTER: my-first-cluster
-  ECS_TASK_DEFINITION: .aws/ecs-task-definition.json
-  ECS_SUBNET: subnet-0ddc1103bb29836f4
   ECS_SECURITY_GROUP: sg-02c3702cfa8399f6e
+  VPC_ID: vpc-0ef01fcfe0e63f3b1
 
 jobs:
   deploy:
@@ -52,6 +51,16 @@ jobs:
             --query 'taskDefinitionArns[0]' \
             --output text)
           echo "LATEST_TASK_DEFINITION=$LATEST_TASK_DEFINITION" >> $GITHUB_ENV
+
+      - name: Obtener todas las subnets de la VPC
+        run: |
+          SUBNETS=$(aws ec2 describe-subnets \
+            --filters "Name=vpc-id,Values=$VPC_ID" \
+            --query "Subnets[*].SubnetId" \
+            --output text)
+          
+          echo "SUBNETS=$(echo $SUBNETS | tr ' ' ',')" >> $GITHUB_ENV
+          echo "Subnets detectadas: $SUBNETS"
 
       - name: Obtener la ENI de la tarea en ejecución (si existe)
         run: |
@@ -103,15 +112,12 @@ jobs:
               sleep 10
             done
           fi
-      - name: Ejecutar una nueva tarea en ECS con la misma ENI
+
+      - name: Ejecutar una nueva tarea en ECS con subnets dinámicas
         run: |
-          SUBNETS=$(aws ec2 describe-subnets \
-          --filters "Name=vpc-id,Values=vpc-0ef01fcfe0e63f3b1" \
-          --query "Subnets[*].SubnetId" \
-          --output text)
           if [ -n "$ENI_ACTUAL" ]; then
             echo "Usando la misma ENI para mantener la IP..."
-            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
+            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=DISABLED}"
           else
             echo "Asignando nueva ENI..."
             NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
