@@ -44,10 +44,6 @@ jobs:
           
           echo "IMAGE_URL=$IMAGE_URL" >> $GITHUB_ENV
 
-      - name: Imprimir URL de la imagen subida
-        run: |
-          echo "La imagen está disponible en: $IMAGE_URL"
-
       - name: Obtener la última versión de la tarea
         run: |
           LATEST_TASK_DEFINITION=$(aws ecs list-task-definitions \
@@ -60,7 +56,7 @@ jobs:
       - name: Verificar si hay tareas en ejecución y detenerlas
         run: |
           RUNNING_TASKS=$(aws ecs list-tasks --cluster $ECS_CLUSTER --desired-status RUNNING --query 'taskArns' --output text)
-          
+
           if [ -n "$RUNNING_TASKS" ]; then
             echo "Deteniendo tareas en ejecución..."
             for TASK in $RUNNING_TASKS; do
@@ -75,9 +71,18 @@ jobs:
         run: |
           if [ -n "$TASKS_BEING_STOPPED" ]; then
             for i in {1..10}; do
-              STOPPED_TASKS=$(aws ecs list-tasks --cluster $ECS_CLUSTER --desired-status STOPPED --query 'taskArns' --output text)
-              
-              if [ "$STOPPED_TASKS" == "$TASKS_BEING_STOPPED" ]; then
+              ALL_STOPPED=true
+
+              for TASK in $TASKS_BEING_STOPPED; do
+                STATUS=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $TASK --query 'tasks[0].lastStatus' --output text)
+                
+                if [ "$STATUS" != "STOPPED" ]; then
+                  ALL_STOPPED=false
+                  break
+                fi
+              done
+
+              if [ "$ALL_STOPPED" = true ]; then
                 echo "Las tareas se han detenido completamente."
                 break
               fi
