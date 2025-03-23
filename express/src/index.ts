@@ -9,7 +9,7 @@ const port:number = 3000;
 
 app.use(express.urlencoded({ extended: true}));
 app.use(express.json());
-app.use("/lol", studentRouter);
+app.use("/students", studentRouter);
 
 db.then(()=>{
     app.listen(port, '0.0.0.0', ()=>{
