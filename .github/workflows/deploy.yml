@@ -39,11 +39,18 @@ jobs:
           docker build -t $ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_EXPRESS:latest ./express
           docker push $ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_EXPRESS:latest
 
+      - name: Obtener la última versión de la tarea
+        run: |
+          LATEST_TASK_DEFINITION=$(aws ecs list-task-definitions \
+            --family-prefix express-mongo-task \
+            --sort DESC \
+            --query 'taskDefinitionArns[0]' \
+            --output text)
+          echo "LATEST_TASK_DEFINITION=$LATEST_TASK_DEFINITION" >> $GITHUB_ENV
+
       - name: Ejecutar una tarea en ECS sin servicio
         run: |
           aws ecs run-task --cluster $ECS_CLUSTER \
-            --task-definition $ECS_TASK_DEFINITION \
+            --task-definition $LATEST_TASK_DEFINITION \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
-
-
