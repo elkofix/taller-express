@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_PUBLIC_REGISTRY: public.ecr.aws
+  ECR_PUBLIC_REGISTRY: public.ecr.aws/r7c1c8z5
   ECR_REPOSITORY_EXPRESS: express-app
   ECR_REPOSITORY_MONGO: mongo-db
   ECS_CLUSTER: my-cluster
