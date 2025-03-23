@@ -53,18 +53,30 @@ jobs:
             --output text)
           echo "LATEST_TASK_DEFINITION=$LATEST_TASK_DEFINITION" >> $GITHUB_ENV
 
-      - name: Verificar si hay tareas en ejecución y detenerlas
+      - name: Obtener la ENI de la tarea en ejecución (si existe)
         run: |
           RUNNING_TASKS=$(aws ecs list-tasks --cluster $ECS_CLUSTER --desired-status RUNNING --query 'taskArns' --output text)
 
+          if [ -n "$RUNNING_TASKS" ]; then
+            echo "Obteniendo la ENI de la tarea actual..."
+            NETWORK_INTERFACE_ID=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $RUNNING_TASKS \
+              --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text)
+            
+            echo "ENI_ACTUAL=$NETWORK_INTERFACE_ID" >> $GITHUB_ENV
+            echo "ENI actual: $NETWORK_INTERFACE_ID"
+          else
+            echo "No hay tareas en ejecución. Se asignará una nueva ENI."
+            echo "ENI_ACTUAL=" >> $GITHUB_ENV
+          fi
+
+      - name: Detener tareas en ejecución
+        run: |
           if [ -n "$RUNNING_TASKS" ]; then
             echo "Deteniendo tareas en ejecución..."
             for TASK in $RUNNING_TASKS; do
               aws ecs stop-task --cluster $ECS_CLUSTER --task $TASK
             done
             echo "TASKS_BEING_STOPPED=$RUNNING_TASKS" >> $GITHUB_ENV
-          else
-            echo "No hay tareas en ejecución."
           fi
 
       - name: Esperar a que la tarea anterior se detenga completamente
@@ -92,35 +104,44 @@ jobs:
             done
           fi
 
-      - name: Ejecutar una nueva tarea en ECS
+      - name: Ejecutar una nueva tarea en ECS con la misma ENI
         run: |
+          if [ -n "$ENI_ACTUAL" ]; then
+            echo "Usando la misma ENI para mantener la IP..."
+            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=DISABLED}"
+          else
+            echo "Asignando nueva ENI..."
+            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
+          fi
+
           TASK_ARN=$(aws ecs run-task --cluster $ECS_CLUSTER \
             --task-definition $LATEST_TASK_DEFINITION \
             --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}" \
+            --network-configuration "$NETWORK_CONFIGURATION" \
             --query 'tasks[0].taskArn' --output text)
-          
+
           echo "TASK_ARN=$TASK_ARN" >> $GITHUB_ENV
-
-      - name: Esperar a que la tarea obtenga una IP pública
-        run: |
-          echo "Esperando a que la tarea tenga una IP pública..."
-          
-          for i in {1..10}; do
-            NETWORK_INTERFACE_ID=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $TASK_ARN \
-              --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text)
-            
-            if [ -n "$NETWORK_INTERFACE_ID" ]; then
-              break
-            fi
-            echo "Esperando 5 segundos..."
-            sleep 5
-          done
-
-          echo "NETWORK_INTERFACE_ID=$NETWORK_INTERFACE_ID" >> $GITHUB_ENV
 
       - name: Obtener y mostrar la IP pública de la tarea
         run: |
+          if [ -n "$ENI_ACTUAL" ]; then
+            echo "Reutilizando ENI existente: $ENI_ACTUAL"
+            NETWORK_INTERFACE_ID=$ENI_ACTUAL
+          else
+            echo "Esperando a que la nueva tarea tenga una ENI asignada..."
+            
+            for i in {1..10}; do
+              NETWORK_INTERFACE_ID=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $TASK_ARN \
+                --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text)
+              
+              if [ -n "$NETWORK_INTERFACE_ID" ]; then
+                break
+              fi
+              echo "Esperando 5 segundos..."
+              sleep 5
+            done
+          fi
+
           PUBLIC_IP=$(aws ec2 describe-network-interfaces \
             --network-interface-ids $NETWORK_INTERFACE_ID \
             --query 'NetworkInterfaces[0].Association.PublicIp' \
