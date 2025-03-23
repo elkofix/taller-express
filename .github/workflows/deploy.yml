@@ -4,13 +4,14 @@ on:
   push:
     branches:
       - master
+
 env:
   AWS_REGION: us-east-1
   ECR_PUBLIC_REGISTRY: public.ecr.aws/r7c1c8z5
   ECR_REPOSITORY_EXPRESS: express-app
   ECS_CLUSTER: my-first-cluster
   ECS_SECURITY_GROUP: sg-02c3702cfa8399f6e
-  VPC_ID: vpc-0ef01fcfe0e63f3b1
+  ECS_SUBNET: subnet-0123456789abcdef  # ⚠️ Ajusta esto con tu subnet real
 
 jobs:
   deploy:
@@ -30,8 +31,7 @@ jobs:
 
       - name: Login en Amazon ECR Public
         run: |
-          aws ecr-public get-login-password --region us-east-1 | \
-          docker login --username AWS --password-stdin public.ecr.aws/r7c1c8z5
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
       - name: Construir y subir imagen de Express a ECR Public
         run: |
@@ -52,75 +52,55 @@ jobs:
             --output text)
           echo "LATEST_TASK_DEFINITION=$LATEST_TASK_DEFINITION" >> $GITHUB_ENV
 
-      - name: Obtener todas las subnets de la VPC
-        run: |
-          SUBNETS=$(aws ec2 describe-subnets \
-            --filters "Name=vpc-id,Values=$VPC_ID" \
-            --query "Subnets[*].SubnetId" \
-            --output text)
-          
-          echo "SUBNETS=$(echo $SUBNETS | tr ' ' ',')" >> $GITHUB_ENV
-          echo "Subnets detectadas: $SUBNETS"
-
       - name: Obtener la ENI de la tarea en ejecución (si existe)
         run: |
           RUNNING_TASKS=$(aws ecs list-tasks --cluster $ECS_CLUSTER --desired-status RUNNING --query 'taskArns' --output text)
 
           if [ -n "$RUNNING_TASKS" ]; then
-            echo "Obteniendo la ENI de la tarea actual..."
             NETWORK_INTERFACE_ID=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $RUNNING_TASKS \
               --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text)
             
             echo "ENI_ACTUAL=$NETWORK_INTERFACE_ID" >> $GITHUB_ENV
-            echo "ENI actual: $NETWORK_INTERFACE_ID"
+            echo "Tareas en ejecución: $RUNNING_TASKS"
           else
-            echo "No hay tareas en ejecución. Se asignará una nueva ENI."
+            echo "No hay tareas en ejecución."
             echo "ENI_ACTUAL=" >> $GITHUB_ENV
           fi
+          
+          echo "RUNNING_TASKS=$RUNNING_TASKS" >> $GITHUB_ENV
 
       - name: Detener tareas en ejecución
         run: |
           if [ -n "$RUNNING_TASKS" ]; then
-            echo "Deteniendo tareas en ejecución..."
             for TASK in $RUNNING_TASKS; do
               aws ecs stop-task --cluster $ECS_CLUSTER --task $TASK
             done
-            echo "TASKS_BEING_STOPPED=$RUNNING_TASKS" >> $GITHUB_ENV
+            echo "Esperando a que las tareas se detengan..."
+            sleep 10
           fi
 
-      - name: Esperar a que la tarea anterior se detenga completamente
+      - name: Esperar hasta que las tareas se detengan completamente
         run: |
-          if [ -n "$TASKS_BEING_STOPPED" ]; then
-            for i in {1..10}; do
-              ALL_STOPPED=true
+          for i in {1..10}; do
+            TASKS_REMAINING=$(aws ecs list-tasks --cluster $ECS_CLUSTER --desired-status RUNNING --query 'taskArns' --output text)
+            
+            if [ -z "$TASKS_REMAINING" ]; then
+              echo "Las tareas se han detenido completamente."
+              break
+            fi
+            
+            echo "Esperando 10 segundos para verificar nuevamente..."
+            sleep 10
+          done
 
-              for TASK in $TASKS_BEING_STOPPED; do
-                STATUS=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $TASK --query 'tasks[0].lastStatus' --output text)
-                
-                if [ "$STATUS" != "STOPPED" ]; then
-                  ALL_STOPPED=false
-                  break
-                fi
-              done
-
-              if [ "$ALL_STOPPED" = true ]; then
-                echo "Las tareas se han detenido completamente."
-                break
-              fi
-              
-              echo "Esperando 10 segundos para verificar nuevamente..."
-              sleep 10
-            done
-          fi
-
-      - name: Ejecutar una nueva tarea en ECS con subnets dinámicas
+      - name: Ejecutar una nueva tarea en ECS con la misma ENI (si aplica)
         run: |
           if [ -n "$ENI_ACTUAL" ]; then
-            echo "Usando la misma ENI para mantener la IP..."
-            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
+            echo "Intentando reutilizar la ENI existente: $ENI_ACTUAL"
+            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
           else
             echo "Asignando nueva ENI..."
-            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
+            NETWORK_CONFIGURATION="awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
           fi
 
           TASK_ARN=$(aws ecs run-task --cluster $ECS_CLUSTER \
@@ -133,23 +113,21 @@ jobs:
 
       - name: Obtener y mostrar la IP pública de la tarea
         run: |
-          if [ -n "$ENI_ACTUAL" ]; then
-            echo "Reutilizando ENI existente: $ENI_ACTUAL"
-            NETWORK_INTERFACE_ID=$ENI_ACTUAL
-          else
-            echo "Esperando a que la nueva tarea tenga una ENI asignada..."
+          echo "Esperando a que la nueva tarea tenga una ENI asignada..."
+          sleep 5
+          
+          for i in {1..10}; do
+            NETWORK_INTERFACE_ID=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $TASK_ARN \
+              --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text)
             
-            for i in {1..10}; do
-              NETWORK_INTERFACE_ID=$(aws ecs describe-tasks --cluster $ECS_CLUSTER --tasks $TASK_ARN \
-                --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text)
-              
-              if [ -n "$NETWORK_INTERFACE_ID" ]; then
-                break
-              fi
-              echo "Esperando 5 segundos..."
-              sleep 5
-            done
-          fi
+            if [ -n "$NETWORK_INTERFACE_ID" ]; then
+              echo "ENI asignada: $NETWORK_INTERFACE_ID"
+              break
+            fi
+            
+            echo "Esperando 5 segundos más..."
+            sleep 5
+          done
 
           PUBLIC_IP=$(aws ec2 describe-network-interfaces \
             --network-interface-ids $NETWORK_INTERFACE_ID \
