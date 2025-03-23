@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_PUBLIC_REGISTRY: public.ecr.aws/r7c1c8z5
+  ECR_PUBLIC_REGISTRY: public.ecr.aws
   ECR_REPOSITORY_EXPRESS: express-app
   ECR_REPOSITORY_MONGO: mongo-db
   ECS_CLUSTER: my-cluster
@@ -31,6 +31,10 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login en Amazon ECR Public
+        run: |
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
       - name: Construir y subir imagen de Express a ECR Public
         run: |
