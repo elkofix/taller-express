@@ -1,6 +1,6 @@
 import mongoose, { mongo } from 'mongoose';
 
-const connectionString:string = "mongodb://root:password@localhost:27017/";
+const connectionString:string = "mongodb://mongo:dCWABMaVBvgkiGYXMuUuqgJWdqXElxSk@yamanote.proxy.rlwy.net:20957";
 
 export const db = mongoose.connect(connectionString, { dbName:"compunet03" })
 .then(()=>{
