@@ -103,6 +103,16 @@ jobs:
               sleep 10
             done
           fi
+      - name: Obtener una subnet de la VPC del cluster
+        run: |
+          ECS_VPC_ID=$(aws ecs describe-clusters --clusters $ECS_CLUSTER \
+            --query 'clusters[0].vpcId' --output text)
+
+          ECS_SUBNET=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$ECS_VPC_ID" \
+            --query 'Subnets[0].SubnetId' --output text)
+
+          echo "Usando subnet: $ECS_SUBNET"
+          echo "ECS_SUBNET=$ECS_SUBNET" >> $GITHUB_ENV
 
       - name: Ejecutar una nueva tarea en ECS con la misma ENI
         run: |
