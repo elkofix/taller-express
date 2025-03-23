@@ -1,8 +1,5 @@
-# Usamos una imagen oficial de Node.js basada en Alpine
+# Usamos una imagen oficial de Node.js
 FROM node:18-alpine
-
-# Instalar dependencias necesarias para bcrypt
-RUN apk add --no-cache python3 make g++ 
 
 # Establecemos el directorio de trabajo en el contenedor
 WORKDIR /app
@@ -10,8 +7,8 @@ WORKDIR /app
 # Copiamos package.json y package-lock.json
 COPY package*.json ./
 
-# Instalamos las dependencias nuevamente dentro del contenedor
-RUN npm install && npm rebuild bcrypt --build-from-source
+# Instalamos dependencias
+RUN npm install
 
 # Copiamos el resto de la aplicación
 COPY . .

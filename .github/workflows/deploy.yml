@@ -1,4 +1,4 @@
-name: Deploy Express + MongoDB to AWS ECS (Public ECR)
+name: Deploy Express to AWS ECS (Public ECR)
 
 on:
   push:
@@ -9,12 +9,9 @@ env:
   AWS_REGION: us-east-1
   ECR_PUBLIC_REGISTRY: public.ecr.aws/r7c1c8z5
   ECR_REPOSITORY_EXPRESS: express-app
-  ECR_REPOSITORY_MONGO: mongo-db
   ECS_CLUSTER: my-cluster
   ECS_SERVICE: express-service
   ECS_TASK_DEFINITION: .aws/ecs-task-definition.json
-  CONTAINER_NAME_EXPRESS: express_app
-  CONTAINER_NAME_MONGO: mongo
 
 jobs:
   deploy:
@@ -40,11 +37,6 @@ jobs:
         run: |
           docker build -t $ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_EXPRESS:latest ./express
           docker push $ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_EXPRESS:latest
-
-      - name: Construir y subir imagen de MongoDB a ECR Public
-        run: |
-          docker build -t $ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_MONGO:latest ./mongo-db
-          docker push $ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_MONGO:latest
 
       - name: Actualizar definición de tarea ECS
         run: |
