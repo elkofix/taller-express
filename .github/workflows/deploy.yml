@@ -9,9 +9,10 @@ env:
   AWS_REGION: us-east-1
   ECR_PUBLIC_REGISTRY: public.ecr.aws/r7c1c8z5
   ECR_REPOSITORY_EXPRESS: express-app
-  ECS_CLUSTER: my-cluster
-  ECS_SERVICE: express-service
+  ECS_CLUSTER: my-first-cluster
   ECS_TASK_DEFINITION: .aws/ecs-task-definition.json
+  ECS_SUBNET: subnet-033e289b7b67bf8df
+  ECS_SECURITY_GROUP: sg-02c3702cfa8399f6e
 
 jobs:
   deploy:
@@ -38,6 +39,11 @@ jobs:
           docker build -t $ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_EXPRESS:latest ./express
           docker push $ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_EXPRESS:latest
 
-      - name: Actualizar definición de tarea ECS
+      - name: Ejecutar una tarea en ECS sin servicio
         run: |
-          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
+          aws ecs run-task --cluster $ECS_CLUSTER \
+            --task-definition $ECS_TASK_DEFINITION \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$ECS_SUBNET],securityGroups=[$ECS_SECURITY_GROUP],assignPublicIp=ENABLED}"
+
+
