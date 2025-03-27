@@ -1,2 +1,2 @@
-export * from './student.model'
+export * from './user.model'
 export * from './event.model'
