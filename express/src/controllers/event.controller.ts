@@ -8,6 +8,7 @@ class EventController{
         try{
             const event: EventDocument = await eventService.create(req.body);
             res.status(201).json(event);
+            return;
         }catch(error){
             res.status(500).json({message: "Event hasn't been created"});
         }

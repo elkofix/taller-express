@@ -1,5 +1,5 @@
 import express, {Express} from 'express';
-import { userRouter, eventRouter } from './routes/student.route';
+import { userRouter, eventRouter } from './routes';
 import { db } from './lib/connectionDB';
 import { json } from 'stream/consumers';
 
