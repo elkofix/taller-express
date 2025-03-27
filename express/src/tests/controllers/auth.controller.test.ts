@@ -1,5 +1,5 @@
 import request from "supertest";
-import { app } from "../../index"; 
+import { app, server } from "../../index"; 
 import { userService } from "../../services";
 import { securityService } from "../../services";
 
@@ -18,6 +18,13 @@ describe("AuthController - Login", () => {
     process.env.NODE_ENV = "test"
     jest.clearAllMocks();
   });
+
+  afterAll(async () => {
+    if (server) {
+        await new Promise(resolve => server.close(resolve));
+    }
+});
+
 
   it("debería retornar 400 si el usuario no existe", async () => {
     (userService.findByEmail as jest.Mock).mockResolvedValue(null);

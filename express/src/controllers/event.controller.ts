@@ -6,11 +6,18 @@ class EventController{
 
     async create(req: Request, res: Response){
         try{
+            const { name, bannerPhotoUrl, isPublic, userId } = req.body;
+            if (!name || !bannerPhotoUrl || isPublic === undefined || !userId) {
+                res.status(400).json({ message: "Missing required fields: name, bannerPhotoUrl, isPublic, or userId" });
+                return;
+            }
+    
             const event: EventDocument = await eventService.create(req.body);
             res.status(201).json(event);
             return;
         }catch(error){
             res.status(500).json({message: "Event hasn't been created"});
+            return;
         }
     }
 
