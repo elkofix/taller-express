@@ -16,14 +16,18 @@ app.use("/user", userRouter);
 app.use("/events", eventRouter);
 app.use("/auth", authRouter);
 
-let server: Server; // Declarar la variable server
+let server: Server; 
 
-db.then(() => {
-    server = app.listen(port, '0.0.0.0', () => {
-        console.log(`Server is running on ${port} port`);
+if (process.env.NODE_ENV !== "test") {
+    db.then(() => {
+        server = app.listen(port, '0.0.0.0', () => {
+            console.log(`Server is running on ${port} port`);
+        });
+    }).catch((error) => {
+        console.error("Database connection failed", error);
     });
-}).catch((error) => {
-    console.error("Database connection failed", error);
-});
+} else {
+    console.log("Running in test mode, server not started automatically.");
+}
 
 export { server };

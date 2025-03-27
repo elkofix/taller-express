@@ -1,12 +1,15 @@
 import request from "supertest";
-import { app, server } from "../../index"; 
+import { app } from "../../index"; 
 import { userService } from "../../services";
 import { securityService } from "../../services";
+import { Server } from "http";
 
 jest.mock("../../services/user.service");
 jest.mock("../../services/security.service");
 
 describe("AuthController - Login", () => {
+  process.env.NODE_ENV = "test"
+  let server: Server;
   const mockUser = {
     id: "12345",
     email: "test@example.com",
@@ -14,8 +17,13 @@ describe("AuthController - Login", () => {
     role: "user",
   };
 
-  beforeEach(() => {
+  beforeAll(async () => {
     process.env.NODE_ENV = "test"
+    server = app.listen(4000, () => console.log("Test server running on port 4000"));
+});
+
+
+  beforeEach(() => {
     jest.clearAllMocks();
   });
 

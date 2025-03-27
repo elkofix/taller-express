@@ -1,10 +1,13 @@
 import request from "supertest";
 import { app, server } from "../../index";
 import { eventService } from "../../services";
+import { Server } from "http";
 
 jest.mock("../../services/event.service");
 
 describe("EventController", () => {
+  process.env.NODE_ENV = "test"
+  let server: Server;
   const mockEvent = {
     id: "1",
     name: "Tech Conference",
@@ -13,6 +16,11 @@ describe("EventController", () => {
     userId: "12345",
   };
 
+  beforeAll(async () => {
+    process.env.NODE_ENV = "test"
+    server = app.listen(4000, () => console.log("Test server running on port 4000"));
+});
+
   beforeEach(() => {
     process.env.NODE_ENV = "test";
     jest.clearAllMocks();
@@ -20,9 +28,9 @@ describe("EventController", () => {
 
   afterAll(async () => {
     if (server) {
-        await new Promise(resolve => server.close(resolve));
+      await new Promise(resolve => server.close(resolve));
     }
-});
+  });
 
   describe("POST /events/create", () => {
     it("debería retornar 400 si falta algún campo requerido", async () => {

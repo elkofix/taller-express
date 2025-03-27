@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 export type UserRole  = 'superadmin' | 'user' | 'event-manager';
 export interface UserInput{
         name:string;
-        lastname: number;      
+        lastname: string;      
         email: string;
         password:string;
         role:UserRole;
