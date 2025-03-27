@@ -1,5 +1,6 @@
 import express, {Express} from 'express';
 import { userRouter } from './routes/user.route';
+import { authRouter } from './routes/auth.route';
 import { db } from './lib/connectionDB';
 import { json } from 'stream/consumers';
 
@@ -10,6 +11,7 @@ const port:number = 3000;
 app.use(express.urlencoded({ extended: true}));
 app.use(express.json());
 app.use("/user", userRouter);
+app.use("/auth", authRouter);
 
 db.then(()=>{
     app.listen(port, '0.0.0.0', ()=>{

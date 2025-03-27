@@ -14,6 +14,7 @@ class UserController{
             req.body.password = await securityService.encryptPassword(req.body.password);
             const user: UserDocument = await userService.create(req.body);
             res.status(201).json(user);
+            return;
 
         }catch(error){
             res.status(500).json(`the user hasn't been created`)
@@ -25,6 +26,7 @@ class UserController{
         try{
             const users: UserDocument[] = await userService.getAll();
             res.json(users);
+            return;
         }catch(error){
             console.log(error);
             throw error;
@@ -50,17 +52,20 @@ class UserController{
                 res.status(400).json({
                     message: `User or password incorrect`
                 });
+                return;
             }
             const token = await securityService.generateToken(user.id, user.email, user.role);
             res.status(200).json({
                 message: "login successfull",
                 token: token
             })
+            return;
 
        }catch(error){
         res.status(500).json({
             message: "Login incorrect"
         })
+        return;
        }
     }
 
@@ -70,10 +75,13 @@ class UserController{
             const user: UserDocument | null = await userService.updateUser(email, req.body as UserInput);
             if(user === null){
                 res.status(404).json({message: `User ${email} not found.`})
+                return;
             }
             res.json(user);
+            return;
         }catch(error){
             res.status(500).json({message: `The user ${req.body.email} cannot be updated.`})
+            return;
         }
     }
 
