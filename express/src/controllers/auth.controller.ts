@@ -23,17 +23,21 @@ class AuthController{
                 res.status(400).json({
                     message: `User or password incorrect`
                 });
+                return;
+
             }
             const token = await securityService.generateToken(user.id, user.email, user.role);
             res.status(200).json({
                 message: "login successfull",
                 token: token
             })
+            return;
 
        }catch(error){
         res.status(500).json({
             message: "Login incorrect"
         })
+        return;
        }
     }
 }

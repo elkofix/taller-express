@@ -1,5 +1,7 @@
 import express, {Express} from 'express';
-import { userRouter, eventRouter } from './routes';
+import { eventRouter } from './routes';
+import { userRouter } from './routes/user.route';
+import { authRouter } from './routes/auth.route';
 import { db } from './lib/connectionDB';
 import { json } from 'stream/consumers';
 
@@ -11,6 +13,7 @@ app.use(express.urlencoded({ extended: true}));
 app.use(express.json());
 app.use("/user", userRouter);
 app.use("/events", eventRouter);
+app.use("/auth", authRouter);
 
 db.then(()=>{
     app.listen(port, '0.0.0.0', ()=>{

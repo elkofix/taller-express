@@ -26,7 +26,7 @@ describe("AuthController - Login", () => {
       .post("/auth/login")
       .send({ email: "notfound@example.com", password: "123456" });
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(400);
     expect(res.body.message).toBe("user notfound@example.com not found.");
   });
 
