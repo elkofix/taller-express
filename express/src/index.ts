@@ -1,15 +1,15 @@
 import express, {Express} from 'express';
-import { studentRouter } from './routes/student.route';
+import { userRouter } from './routes/user.route';
 import { db } from './lib/connectionDB';
 import { json } from 'stream/consumers';
 
-const app: Express = express();
+export const app: Express = express();
 
 const port:number = 3000;
 
 app.use(express.urlencoded({ extended: true}));
 app.use(express.json());
-app.use("/students", studentRouter);
+app.use("/user", userRouter);
 
 db.then(()=>{
     app.listen(port, '0.0.0.0', ()=>{
