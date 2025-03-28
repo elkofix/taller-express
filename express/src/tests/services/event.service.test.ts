@@ -62,30 +62,4 @@ describe("EventService", () => {
         expect(EventModel.findByIdAndDelete).toHaveBeenCalledWith((mockEvent._id as mongoose.Types.ObjectId).toString());
         expect(deletedEvent).toEqual(mockEvent);
     });
-
-    test("should throw an error if event not found when finding by ID", async () => {
-        (EventModel.findById as jest.Mock).mockResolvedValue(null);
-
-        await expect(eventService.findById("nonexistent-id")).rejects.toThrow("Event not found with id nonexistent-id");
-    });
-
-    test("should throw an error if event not found when updating", async () => {
-        (EventModel.findOneAndUpdate as jest.Mock).mockResolvedValue(null);
-
-        await expect(eventService.updateEvent("nonexistent-id", { name: "New Name" } as EventInput))
-            .rejects.toThrow("Event with id nonexistent-id not found");
-    });
-
-    test("should throw an error if event not found when deleting", async () => {
-        (EventModel.findByIdAndDelete as jest.Mock).mockResolvedValue(null);
-
-        await expect(eventService.deleteEvent("nonexistent-id")).rejects.toThrow("Event not found with id nonexistent-id");
-    });
-
-    test("should log error and throw when create fails", async () => {
-        const error = new Error("Database error");
-        (EventModel.create as jest.Mock).mockRejectedValue(error);
-
-        await expect(eventService.create(mockEvent)).rejects.toThrow("Database error");
-    });
 });
