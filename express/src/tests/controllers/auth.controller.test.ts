@@ -19,7 +19,7 @@ describe("AuthController - Login", () => {
 
   beforeAll(async () => {
     process.env.NODE_ENV = "test"
-    server = app.listen(4000, () => console.log("Test server running on port 4000"));
+    server = app.listen(0, () => console.log("Test server running on port 4000"));
 });
 
 

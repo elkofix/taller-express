@@ -12,4 +12,5 @@ export const db =
         })
         .catch((error) => {
           console.error("MongoDB connection error:", error);
+          throw new Error("Connection Failed");
         });
