@@ -38,7 +38,7 @@ jobs:
           IMAGE_TAG=latest
           IMAGE_URL=$ECR_PUBLIC_REGISTRY/$ECR_REPOSITORY_EXPRESS:$IMAGE_TAG
           
-          docker build -t $IMAGE_URL ./express
+          docker build -t $IMAGE_URL .
           docker push $IMAGE_URL
           
           echo "IMAGE_URL=$IMAGE_URL" >> $GITHUB_ENV
