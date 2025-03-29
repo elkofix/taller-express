@@ -21,7 +21,7 @@ describe("UserController", () => {
   };
 
   beforeAll(async () => {
-    server = app.listen(0);
+    server = app.listen(0, () => console.log("Test server running on available port"));
   });
 
   beforeEach(() => {

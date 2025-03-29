@@ -1,91 +1,94 @@
+
 import mongoose from "mongoose";
-import { EventDocument, EventInput, EventModel } from "../../models";
-import { eventService } from "../../services";
+import { UserDocument, UserInput, UserModel } from "../../models";
+import { userService } from "../../services";
 
-jest.mock("../../models/event.model");
+jest.mock("../../models/user.model");
 
-describe("EventService", () => {
+describe("UserService", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    const mockEvent: EventDocument = {
+    const mockUser: UserDocument = {
         _id: new mongoose.Types.ObjectId(),
-        name: "Tech Conference",
-        bannerPhotoUrl: "https://example.com/banner.jpg",
-        isPublic: true,
-        userId: "user123",
-    } as EventDocument;
+        name: "John",
+        lastname: "Doe",
+        email: "john@example.com",
+        password: "hashedpassword",
+        role: "user",
+        isActive: true,
+    } as UserDocument;
 
-    test("should create an event", async () => {
-        (EventModel.create as jest.Mock).mockResolvedValue(mockEvent);
+    test("should create a user", async () => {
+        (UserModel.create as jest.Mock).mockResolvedValue(mockUser);
 
-        const event = await eventService.create(mockEvent);
-        expect(EventModel.create).toHaveBeenCalledWith(mockEvent);
-        expect(event).toEqual(mockEvent);
+        const user = await userService.create(mockUser);
+        expect(UserModel.create).toHaveBeenCalledWith(mockUser);
+        expect(user).toEqual(mockUser);
     });
 
-    test("should find an event by ID", async () => {
-        (EventModel.findById as jest.Mock).mockResolvedValue(mockEvent);
+    test("should throw error and not create a user", async () => {
+        (UserModel.create as jest.Mock).mockRejectedValue(new Error("DB error"));
+    
+        await expect(userService.create(mockUser)).rejects.toThrow("DB error");
+    
+        expect(UserModel.create).toHaveBeenCalledWith(mockUser);
+    });
+    
 
-        const event = await eventService.findById((mockEvent._id as mongoose.Types.ObjectId).toString());
-        expect(EventModel.findById).toHaveBeenCalledWith((mockEvent._id as mongoose.Types.ObjectId).toString());
-        expect(event).toEqual(mockEvent);
+    test("should find a user by email", async () => {
+        (UserModel.findOne as jest.Mock).mockResolvedValue(mockUser);
+
+        const user = await userService.findByEmail("john@example.com");
+        expect(UserModel.findOne).toHaveBeenCalledWith({ email: "john@example.com" });
+        expect(user).toEqual(mockUser);
     });
 
-    test("should return all events", async () => {
-        (EventModel.find as jest.Mock).mockResolvedValue([mockEvent]);
 
-        const events = await eventService.getAll();
-        expect(EventModel.find).toHaveBeenCalled();
-        expect(events).toEqual([mockEvent]);
+    test("should throw error and not find a user by email", async () => {
+        (UserModel.findOne as jest.Mock).mockRejectedValue(new Error("DB error"));
+
+        await expect(userService.findByEmail("john@example.com")).rejects.toThrow("DB error");    
+
+        expect(UserModel.findOne).toHaveBeenCalledWith({ email: "john@example.com" });
+
     });
 
-    test("should update an event", async () => {
-        const updatedEvent = { ...mockEvent, name: "Updated Event Name" };
-        (EventModel.findOneAndUpdate as jest.Mock).mockResolvedValue(updatedEvent);
+    test("should return all users", async () => {
+        (UserModel.find as jest.Mock).mockResolvedValue([mockUser]);
 
-        const result = await eventService.updateEvent((mockEvent._id as mongoose.Types.ObjectId).toString(), { name: "Updated Event Name" } as EventInput);
-        expect(EventModel.findOneAndUpdate).toHaveBeenCalledWith(
-            { _id: (mockEvent._id as mongoose.Types.ObjectId).toString() },
-            { name: "Updated Event Name" },
+        const users = await userService.getAll();
+        expect(UserModel.find).toHaveBeenCalled();
+        expect(users).toEqual([mockUser]);
+    });
+
+    test("should throw error and not should return all users", async () => {
+        (UserModel.find as jest.Mock).mockRejectedValue(new Error("DB error"));
+
+        await expect(userService.getAll()).rejects.toThrow("DB error");    
+        expect(UserModel.find).toHaveBeenCalled();
+    });
+
+    test("should update a user", async () => {
+        const updatedUser = { ...mockUser, name: "Updated Name" };
+        (UserModel.findOneAndUpdate as jest.Mock).mockResolvedValue(updatedUser);
+
+        const result = await userService.updateUser("john@example.com", { name: "Updated Name" } as UserInput);
+        expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { email: "john@example.com" },
+            { name: "Updated Name" },
             { returnOriginal: false }
         );
-        expect(result).toEqual(updatedEvent);
+        expect(result).toEqual(updatedUser);
     });
 
-    test("should delete an event", async () => {
-        (EventModel.findByIdAndDelete as jest.Mock).mockResolvedValue(mockEvent);
+    test("should throw error and not  should update a user", async () => {
+        const updatedUser = { ...mockUser, name: "Updated Name" };
+        (UserModel.findOneAndUpdate as jest.Mock).mockRejectedValue(new Error("DB error"));
 
-        const deletedEvent = await eventService.deleteEvent((mockEvent._id as mongoose.Types.ObjectId).toString());
-        expect(EventModel.findByIdAndDelete).toHaveBeenCalledWith((mockEvent._id as mongoose.Types.ObjectId).toString());
-        expect(deletedEvent).toEqual(mockEvent);
-    });
-
-    test("should throw an error if event not found when finding by ID", async () => {
-        (EventModel.findById as jest.Mock).mockResolvedValue(null);
-
-        await expect(eventService.findById("nonexistent-id")).rejects.toThrow("Event not found with id nonexistent-id");
-    });
-
-    test("should throw an error if event not found when updating", async () => {
-        (EventModel.findOneAndUpdate as jest.Mock).mockResolvedValue(null);
-
-        await expect(eventService.updateEvent("nonexistent-id", { name: "New Name" } as EventInput))
-            .rejects.toThrow("Event with id nonexistent-id not found");
-    });
-
-    test("should throw an error if event not found when deleting", async () => {
-        (EventModel.findByIdAndDelete as jest.Mock).mockResolvedValue(null);
-
-        await expect(eventService.deleteEvent("nonexistent-id")).rejects.toThrow("Event not found with id nonexistent-id");
-    });
-
-    test("should log error and throw when create fails", async () => {
-        const error = new Error("Database error");
-        (EventModel.create as jest.Mock).mockRejectedValue(error);
-
-        await expect(eventService.create(mockEvent)).rejects.toThrow("Database error");
+        await expect(userService.updateUser("john@example.com", { name: "Updated Name" } as UserInput)).rejects.toThrow("DB error");    
+        expect(UserModel.findOneAndUpdate).toHaveBeenCalled();
     });
 });

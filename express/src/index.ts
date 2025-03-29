@@ -3,7 +3,6 @@ import { eventRouter } from './routes';
 import { userRouter } from './routes/user.route';
 import { authRouter } from './routes/auth.route';
 import { db } from './lib/connectionDB';
-import { json } from 'stream/consumers';
 import { Server } from 'http';
 
 export const app: Express = express();

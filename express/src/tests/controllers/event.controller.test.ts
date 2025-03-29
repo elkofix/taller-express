@@ -17,12 +17,10 @@ describe("EventController", () => {
   };
 
   beforeAll(async () => {
-    process.env.NODE_ENV = "test"
-    server = app.listen(0, () => console.log("Test server running on port 4000"));
+    server = app.listen(0, () => console.log("Test server running on available port"));
 });
 
   beforeEach(() => {
-    process.env.NODE_ENV = "test";
     jest.clearAllMocks();
   });
 
@@ -72,6 +70,16 @@ describe("EventController", () => {
     });
   });
 
+  describe("GET /events", () => {
+    it("debería lanzar error 500 y no retornar una lista de eventos", async () => {
+      (eventService.getAll as jest.Mock).mockRejectedValue(new Error("DB error"));
+      const res = await request(app).get("/events");
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toEqual("Events not found");
+    });
+  });
+
   describe("GET /events/findEvent/:id", () => {
     it("debería retornar un evento por ID", async () => {
       (eventService.findById as jest.Mock).mockResolvedValue(mockEvent);
@@ -107,6 +115,26 @@ describe("EventController", () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual(mockEvent);
+    });
+  })
+
+  describe("DELETE /events/delete/:id", () => {
+    it("debería no encontrar el evento y no eliminar el evento", async () => {
+      (eventService.deleteEvent as jest.Mock).mockResolvedValue(null);
+      const res = await request(app).delete(`/events/delete/${mockEvent.id}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toEqual("Event not found");
+    });
+  });
+
+  describe("DELETE /events/delete/:id", () => {
+    it("debería lanzar un error 500 y no eliminar el evento", async () => {
+      (eventService.deleteEvent as jest.Mock).mockRejectedValue(new Error("DB error"));
+      const res = await request(app).delete(`/events/delete/${mockEvent.id}`);
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toEqual("Event hasn't been deleted");
     });
   });
 

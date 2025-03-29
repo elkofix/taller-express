@@ -15,9 +15,6 @@ class SecurityService{
     async comparePasswords( password: string, currentPassword: string){
         return await bcrypt.compare(password, currentPassword);
     }
-
-
-
 }
 
 export const securityService = new SecurityService();
