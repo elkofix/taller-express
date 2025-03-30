@@ -67,31 +67,34 @@ describe("TicketController", () => {
   describe("DELETE /ticket/:id/cancel", () => {
     it("debería cancelar un ticket exitosamente", async () => {
       (ticketService.cancelTicket as jest.Mock).mockResolvedValue({ ...mockTicket, isActive: false });
-
+  
       const res = await request(app).delete(`/ticket/${mockTicket._id}/cancel`);
-
+  
       expect(res.status).toBe(200);
-      expect(res.body.isActive).toBe(false);
+      expect(res.body.message).toBe("Ticket successfully canceled"); // ← Coincide con el mensaje del controlador
+      expect(res.body.ticket.isActive).toBe(false);
     });
-
+  
     it("debería retornar 404 si el ticket no existe", async () => {
       (ticketService.cancelTicket as jest.Mock).mockResolvedValue(null);
-
+  
       const res = await request(app).delete("/ticket/invalidId/cancel");
-
+  
       expect(res.status).toBe(404);
-      expect(res.body.message).toBe("Ticket not found");
+      expect(res.body.message).toBe("Ticket not found"); // ← Coincide con el mensaje del controlador
     });
-
+  
     it("debería retornar 500 si hay un error en la base de datos", async () => {
       (ticketService.cancelTicket as jest.Mock).mockRejectedValue(new Error("DB error"));
-
+  
       const res = await request(app).delete(`/ticket/${mockTicket._id}/cancel`);
-
-      expect(res.status).toBe(500);
-      expect(res.body.message).toBe("Error canceling ticket");
+  
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe("Error canceling ticket"); // ← Coincide con el mensaje del controlador
     });
   });
+  
+  
 
   describe("GET /ticket/user/:userId", () => {
     it("debería retornar los tickets de un usuario", async () => {

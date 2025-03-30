@@ -1,13 +1,15 @@
-import express from "express";
+
+import { Router } from "express";
 
 import { ticketController } from "../controllers/ticket.controller"; // Import the buyTicket function
 
 
-const router = express.Router();
 
-router.post("/buy", ticketController.buyTicket); // Comprar un boleto
-router.get("/user/:userId", ticketController.getUserTickets); // Ver boletos comprados por usuario
-router.get("/:ticketId", ticketController.getTicketDetails); // Ver detalles de un boleto
-router.delete("/:ticketId", ticketController.cancelTicket); // Cancelar un boleto
+export const ticketRouter = Router();
 
-export default router;
+ticketRouter.post("/buy", ticketController.buyTicket); // Comprar un boleto
+ticketRouter.get("/user/:userId", ticketController.getUserTickets); // Ver boletos comprados por usuario
+ticketRouter.get("/:ticketId", ticketController.getTicketDetails); // Ver detalles de un boleto
+ticketRouter.delete("/:ticketId", ticketController.cancelTicket); // Cancelar un boleto
+
+
