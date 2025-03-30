@@ -15,7 +15,7 @@ class TicketController {
                 return;
             }
             
-            const ticket: TicketDocument = await ticketService.create({ buyDate, Presentation_idPresentation, User_idUser, isRedeemed, isActive });
+            const ticket: TicketDocument = await ticketService.buyTicket({ buyDate, Presentation_idPresentation, User_idUser, isRedeemed, isActive });
             res.status(201).json(ticket);
         } catch (error) {
             res.status(500).json({ message: "Error al comprar el ticket" });

@@ -3,7 +3,7 @@ import { TicketDocument, TicketInput, TicketModel } from "../models/ticket.model
 class TicketService {
     
     // Comprar un boleto
-    async create(data: TicketInput): Promise<TicketDocument> {
+    async buyTicket(data: TicketInput): Promise<TicketDocument> {
         try {
             const ticket = await TicketModel.create(data);
             console.log(` Ticket ${ticket._id} para presentación ${ticket.Presentation_idPresentation} creado con éxito`);
