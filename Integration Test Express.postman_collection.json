@@ -1,0 +1,1967 @@
+{
+	"info": {
+		"_postman_id": "b8d7d107-f9a7-4a01-bcd2-8682c6d3cb72",
+		"name": "Integration Test Express",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "38823104"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "POST",
+					"item": [
+						{
+							"name": "LOGIN EXITING USER",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response body has message and token\", function () {\r",
+											"    pm.response.to.have.jsonBody('message');\r",
+											"    pm.response.to.have.jsonBody('token');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"{{superadminEmail}}\",\r\n    \"password\": \"{{password}}\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/login",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "LOGIN USER NOT FOUND",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", function () {\r",
+											"    pm.response.to.have.status(400);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response body has the expected message\", function () {\r",
+											"    pm.expect(pm.response.json().message).to.equal(\"User any@mail.com not found.\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"packages": {},
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"any@mail.com\",\r\n    \"password\": \"anypassword\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/login",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "POST",
+					"item": [
+						{
+							"name": "CREATE USER",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la solicitud:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"        \r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											"\r",
+											"\r",
+											"pm.test(\"Response body has required properties\", function () {\r",
+											"    pm.expect(pm.response.json()).to.have.property('name');\r",
+											"    pm.expect(pm.response.json()).to.have.property('email');\r",
+											"    pm.expect(pm.response.json()).to.have.property('isActive');\r",
+											"    pm.expect(pm.response.json()).to.have.property('role');\r",
+											"    pm.expect(pm.response.json()).to.have.property('_id');\r",
+											"    pm.expect(pm.response.json()).to.have.property('__v');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Isabella\",\r\n    \"lastname\": \"Ocampo\",\r\n    \"email\": \"{{$randomExampleEmail}}\",\r\n    \"password\": \"password\",\r\n    \"role\": \"event-manager\",\r\n    \"isActive\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/user",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "CREATE ALREADY EXISTING USER",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la solicitud:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"        \r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 400\", function () {\r",
+											"    pm.response.to.have.status(400);\r",
+											"});\r",
+											"\r",
+											"\r",
+											"pm.test(\"Content type is application/json\", function () {\r",
+											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response message indicates existing user\", function () {\r",
+											"    pm.expect(pm.response.json().message).to.include(\"The user\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Isabella\",\r\n    \"lastname\": \"Ocampo\",\r\n    \"email\": \"{{superadminEmail}}\",\r\n    \"password\": \"password\",\r\n    \"role\": \"event-manager\",\r\n    \"isActive\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/user",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "GET",
+					"item": [
+						{
+							"name": "FIND USERS ALL USERS AS ADMIN",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la solicitud:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"        \r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Test for status code\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Test for response body properties\r",
+											"pm.test(\"Response body has required properties\", function () {\r",
+											"    var jsonData = pm.response.json();\r",
+											"    pm.expect(jsonData).to.be.an('array');\r",
+											"    pm.expect(jsonData[0]).to.have.property('name');\r",
+											"    pm.expect(jsonData[0]).to.have.property('_id');\r",
+											"    pm.expect(jsonData[0]).to.have.property('email');\r",
+											"    pm.expect(jsonData[0]).to.have.property('password');\r",
+											"    pm.expect(jsonData[0]).to.have.property('isActive');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true,
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/user",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "FIND USERS ALL USERS AS USER",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"userEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la solicitud:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"        \r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Test for status code\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"\r",
+											"// Test for response body properties\r",
+											"pm.test(\"Response body has the required properties\", function () {\r",
+											"    pm.response.to.have.jsonBody('name');\r",
+											"    pm.response.to.have.jsonBody('email');\r",
+											"    pm.response.to.have.jsonBody('isActive');\r",
+											"    pm.response.to.have.jsonBody('role');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true,
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/user",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "PUT",
+					"item": [
+						{
+							"name": "FIND USERS ALL USERS AS ADMIN Copy",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Generar un correo electrónico aleatorio\r",
+											"function generateRandomEmail() {\r",
+											"    const randomString = Math.random().toString(36).substring(2, 10);\r",
+											"    return `user_${randomString}@example.com`;\r",
+											"}\r",
+											"\r",
+											"// Guardar el email aleatorio en la variable de colección\r",
+											"pm.collectionVariables.set(\"randomEmail\", generateRandomEmail());\r",
+											"\r",
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"// Hacer la solicitud de autenticación\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la autenticación:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"\r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"\r",
+											"            // Obtener el email generado\r",
+											"            const randomEmail = pm.collectionVariables.get(\"randomEmail\");\r",
+											"\r",
+											"            // Configurar la solicitud para crear usuario\r",
+											"            const createUserUrl = `${baseUrl}/user`;\r",
+											"\r",
+											"            pm.sendRequest({\r",
+											"                url: createUserUrl,\r",
+											"                method: \"POST\",\r",
+											"                header: {\r",
+											"                    \"Content-Type\": \"application/json\",\r",
+											"                    \"Authorization\": `Bearer ${token}`\r",
+											"                },\r",
+											"                body: {\r",
+											"                    mode: \"raw\",\r",
+											"                    raw: JSON.stringify({\r",
+											"                        name: \"Isabella\",\r",
+											"                        lastname: \"Ocampo\",\r",
+											"                        password: \"password\",\r",
+											"                        email: randomEmail,\r",
+											"                        role: \"event-manager\",\r",
+											"                        isActive: true\r",
+											"                    })\r",
+											"                }\r",
+											"            }, function (err, res) {\r",
+											"                if (err) {\r",
+											"                    console.log(\"Error al crear el usuario:\", err);\r",
+											"                } else {\r",
+											"                    console.log(\"Usuario creado con éxito:\", res.json());\r",
+											"                }\r",
+											"            });\r",
+											"\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"\r",
+											"pm.test(\"Response body has the required properties\", function () {\r",
+											"    pm.response.to.have.jsonBody('name', 'Valentina');\r",
+											"    pm.response.to.have.jsonBody('isActive', true);\r",
+											"    pm.response.to.have.jsonBody('role', 'event-manager');\r",
+											"    pm.response.to.have.jsonBody('_id');\r",
+											"    pm.response.to.have.jsonBody('__v', 0);\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Valentina\",\r\n    \"lastname\": \"Ocampo\",\r\n    \"password\": \"password\",\r\n    \"email\": \"{{randomEmail}}\",\r\n    \"role\": \"event-manager\",\r\n    \"isActive\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/user/{{randomEmail}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user",
+										"{{randomEmail}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "FIND USERS ALL USERS AS ADMIN NOT FOUND",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la solicitud:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"        \r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 404\", function () {\r",
+											"    pm.response.to.have.status(404);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Content-Type is application/json\", function () {\r",
+											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Verify message in the response\", function () {\r",
+											"    pm.expect(pm.response.json().message).to.equal(\"User usuario@random.com not found.\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Valentina\",\r\n    \"lastname\": \"Ocampo\",\r\n    \"password\": \"password\",\r\n    \"email\": \"{{randomEmail}}\",\r\n    \"role\": \"event-manager\",\r\n    \"isActive\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/user/usuario@random.com",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user",
+										"usuario@random.com"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "FIND USERS ALL USERS AS NOT ADMIN",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"userEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la solicitud:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"        \r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 403\", function () {\r",
+											"    pm.response.to.have.status(403);\r",
+											"});\r",
+											"\r",
+											"\r",
+											"pm.test(\"Response body has a 'message' field\", function () {\r",
+											"    pm.expect(pm.response.json()).to.have.property('message');\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/user/{{randomEmail}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user",
+										"{{randomEmail}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "DELETE",
+					"item": [
+						{
+							"name": "DELETE EXISITING USER AS ADMIN",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Content type is application/json\", function () {\r",
+											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Verify message in the response\", function () {\r",
+											"    pm.expect(pm.response.json().message).to.include(\"User\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Generar un correo electrónico aleatorio\r",
+											"function generateRandomEmail() {\r",
+											"    const randomString = Math.random().toString(36).substring(2, 10);\r",
+											"    return `user_${randomString}@example.com`;\r",
+											"}\r",
+											"\r",
+											"// Guardar el email aleatorio en la variable de colección\r",
+											"pm.collectionVariables.set(\"randomEmail\", generateRandomEmail());\r",
+											"\r",
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"// Hacer la solicitud de autenticación\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la autenticación:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"\r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"\r",
+											"            // Obtener el email generado\r",
+											"            const randomEmail = pm.collectionVariables.get(\"randomEmail\");\r",
+											"\r",
+											"            // Configurar la solicitud para crear usuario\r",
+											"            const createUserUrl = `${baseUrl}/user`;\r",
+											"\r",
+											"            pm.sendRequest({\r",
+											"                url: createUserUrl,\r",
+											"                method: \"POST\",\r",
+											"                header: {\r",
+											"                    \"Content-Type\": \"application/json\",\r",
+											"                    \"Authorization\": `Bearer ${token}`\r",
+											"                },\r",
+											"                body: {\r",
+											"                    mode: \"raw\",\r",
+											"                    raw: JSON.stringify({\r",
+											"                        name: \"Isabella\",\r",
+											"                        lastname: \"Ocampo\",\r",
+											"                        password: \"password\",\r",
+											"                        email: randomEmail,\r",
+											"                        role: \"event-manager\",\r",
+											"                        isActive: true\r",
+											"                    })\r",
+											"                }\r",
+											"            }, function (err, res) {\r",
+											"                if (err) {\r",
+											"                    console.log(\"Error al crear el usuario:\", err);\r",
+											"                } else {\r",
+											"                    console.log(\"Usuario creado con éxito:\", res.json());\r",
+											"                }\r",
+											"            });\r",
+											"\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/user/{{randomEmail}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user",
+										"{{randomEmail}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DELETE EXISITING USER AS ADMIN NOT FOUND",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 404\", function () {\r",
+											"    pm.response.to.have.status(404);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Verify message in the response body\", function () {\r",
+											"    pm.expect(pm.response.json().message).to.equal(\"User usuario@random.com not found.\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Generar un correo electrónico aleatorio\r",
+											"function generateRandomEmail() {\r",
+											"    const randomString = Math.random().toString(36).substring(2, 10);\r",
+											"    return `user_${randomString}@example.com`;\r",
+											"}\r",
+											"\r",
+											"// Guardar el email aleatorio en la variable de colección\r",
+											"pm.collectionVariables.set(\"randomEmail\", generateRandomEmail());\r",
+											"\r",
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"// Hacer la solicitud de autenticación\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la autenticación:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"\r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"\r",
+											"            // Obtener el email generado\r",
+											"            const randomEmail = pm.collectionVariables.get(\"randomEmail\");\r",
+											"\r",
+											"            // Configurar la solicitud para crear usuario\r",
+											"            const createUserUrl = `${baseUrl}/user`;\r",
+											"\r",
+											"            pm.sendRequest({\r",
+											"                url: createUserUrl,\r",
+											"                method: \"POST\",\r",
+											"                header: {\r",
+											"                    \"Content-Type\": \"application/json\",\r",
+											"                    \"Authorization\": `Bearer ${token}`\r",
+											"                },\r",
+											"                body: {\r",
+											"                    mode: \"raw\",\r",
+											"                    raw: JSON.stringify({\r",
+											"                        name: \"Isabella\",\r",
+											"                        lastname: \"Ocampo\",\r",
+											"                        password: \"password\",\r",
+											"                        email: randomEmail,\r",
+											"                        role: \"event-manager\",\r",
+											"                        isActive: true\r",
+											"                    })\r",
+											"                }\r",
+											"            }, function (err, res) {\r",
+											"                if (err) {\r",
+											"                    console.log(\"Error al crear el usuario:\", err);\r",
+											"                } else {\r",
+											"                    console.log(\"Usuario creado con éxito:\", res.json());\r",
+											"                }\r",
+											"            });\r",
+											"\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/user/usuario@random.com",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user",
+										"usuario@random.com"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DELETE EXISITING USER AS NOT ADMIN",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 403\", function () {\r",
+											"    pm.response.to.have.status(403);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Verify message in the response body\", function () {\r",
+											"    pm.expect(pm.response.json().message).to.contains(\"Forbidden\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Generar un correo electrónico aleatorio\r",
+											"function generateRandomEmail() {\r",
+											"    const randomString = Math.random().toString(36).substring(2, 10);\r",
+											"    return `user_${randomString}@example.com`;\r",
+											"}\r",
+											"\r",
+											"// Guardar el email aleatorio en la variable de colección\r",
+											"pm.collectionVariables.set(\"randomEmail\", generateRandomEmail());\r",
+											"\r",
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"userEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"// Hacer la solicitud de autenticación\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la autenticación:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"\r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"\r",
+											"            // Obtener el email generado\r",
+											"            const randomEmail = pm.collectionVariables.get(\"randomEmail\");\r",
+											"\r",
+											"            // Configurar la solicitud para crear usuario\r",
+											"            const createUserUrl = `${baseUrl}/user`;\r",
+											"\r",
+											"            pm.sendRequest({\r",
+											"                url: createUserUrl,\r",
+											"                method: \"POST\",\r",
+											"                header: {\r",
+											"                    \"Content-Type\": \"application/json\",\r",
+											"                    \"Authorization\": `Bearer ${token}`\r",
+											"                },\r",
+											"                body: {\r",
+											"                    mode: \"raw\",\r",
+											"                    raw: JSON.stringify({\r",
+											"                        name: \"Isabella\",\r",
+											"                        lastname: \"Ocampo\",\r",
+											"                        password: \"password\",\r",
+											"                        email: randomEmail,\r",
+											"                        role: \"event-manager\",\r",
+											"                        isActive: true\r",
+											"                    })\r",
+											"                }\r",
+											"            }, function (err, res) {\r",
+											"                if (err) {\r",
+											"                    console.log(\"Error al crear el usuario:\", err);\r",
+											"                } else {\r",
+											"                    console.log(\"Usuario creado con éxito:\", res.json());\r",
+											"                }\r",
+											"            });\r",
+											"\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/user/{{randomEmail}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"user",
+										"{{randomEmail}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Events",
+			"item": [
+				{
+					"name": "POST",
+					"item": [
+						{
+							"name": "CREATE EVENT",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la solicitud:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"        \r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {\r",
+											"    pm.response.to.have.status(201);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response has event ID\", function () {\r",
+											"    var jsonData = pm.response.json();\r",
+											"    pm.expect(jsonData).to.have.property(\"_id\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Event has correct properties\", function () {\r",
+											"    var jsonData = pm.response.json();\r",
+											"    pm.expect(jsonData).to.have.property(\"name\");\r",
+											"    pm.expect(jsonData).to.have.property(\"bannerPhotoUrl\");\r",
+											"    pm.expect(jsonData).to.have.property(\"isPublic\");\r",
+											"    pm.expect(jsonData).to.have.property(\"userId\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Concierto de Rock\",\r\n    \"bannerPhotoUrl\": \"https://example.com/banner.jpg\",\r\n    \"isPublic\": true,\r\n    \"userId\": \"65f4b3c2d8a4e6b7a9c12345\"\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/events/create",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"events",
+										"create"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "GET",
+					"item": [
+						{
+							"name": "FIND ALL EVENTS",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"pm.sendRequest({\r",
+											"    url: authUrl,\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            email: email,\r",
+											"            password: password\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la solicitud:\", err);\r",
+											"    } else {\r",
+											"        const token = res.json().token;\r",
+											"        \r",
+											"        if (token) {\r",
+											"            pm.collectionVariables.set(\"token\", token);\r",
+											"            console.log(\"Token guardado:\", token);\r",
+											"        } else {\r",
+											"            console.log(\"No se encontró un token en la respuesta.\");\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response is an array\", function () {\r",
+											"    var jsonData = pm.response.json();\r",
+											"    pm.expect(jsonData).to.be.an(\"array\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Each event has expected properties\", function () {\r",
+											"    var jsonData = pm.response.json();\r",
+											"    jsonData.forEach(event => {\r",
+											"        pm.expect(event).to.have.property(\"_id\");\r",
+											"        pm.expect(event).to.have.property(\"name\");\r",
+											"        pm.expect(event).to.have.property(\"bannerPhotoUrl\");\r",
+											"        pm.expect(event).to.have.property(\"isPublic\");\r",
+											"        pm.expect(event).to.have.property(\"userId\");\r",
+											"    });\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/events/",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"events",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "FIND EVENT BY ID",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Autenticación\r",
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"// Solo realizar la autenticación si no hay token o si ha expirado\r",
+											"if (!pm.collectionVariables.get(\"token\")) {\r",
+											"    pm.sendRequest({\r",
+											"        url: authUrl,\r",
+											"        method: \"POST\",\r",
+											"        header: {\r",
+											"            \"Content-Type\": \"application/json\"\r",
+											"        },\r",
+											"        body: {\r",
+											"            mode: \"raw\",\r",
+											"            raw: JSON.stringify({\r",
+											"                email: email,\r",
+											"                password: password\r",
+											"            })\r",
+											"        }\r",
+											"    }, function (err, res) {\r",
+											"        if (err) {\r",
+											"            console.log(\"Error en la solicitud:\", err);\r",
+											"        } else {\r",
+											"            const token = res.json().token;\r",
+											"            \r",
+											"            if (token) {\r",
+											"                pm.collectionVariables.set(\"token\", token);\r",
+											"                console.log(\"Token guardado:\", token);\r",
+											"            } else {\r",
+											"                console.log(\"No se encontró un token en la respuesta.\");\r",
+											"            }\r",
+											"        }\r",
+											"    });\r",
+											"}\r",
+											"\r",
+											"// Guardar el ID del evento que estás buscando para uso en tests\r",
+											"pm.collectionVariables.set(\"eventId\", pm.collectionVariables.get(\"eventId\") || \"67e9a5ca924d886968e4707a\");\r",
+											"\r",
+											"console.log(\"Buscando evento con ID:\", pm.collectionVariables.get(\"eventId\"));"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains the expected event properties\", function () {\r",
+											"    var jsonData = pm.response.json();\r",
+											"    pm.expect(jsonData).to.have.property(\"_id\");\r",
+											"    pm.expect(jsonData).to.have.property(\"name\");\r",
+											"    pm.expect(jsonData).to.have.property(\"bannerPhotoUrl\");\r",
+											"    pm.expect(jsonData).to.have.property(\"isPublic\");\r",
+											"    pm.expect(jsonData).to.have.property(\"userId\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/events/findEvent/{{eventId}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"events",
+										"findEvent",
+										"{{eventId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "PUT",
+					"item": [
+						{
+							"name": "UPDATE EXISTING EVENT",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"if (!pm.collectionVariables.get(\"token\")) {\r",
+											"    pm.sendRequest({\r",
+											"        url: authUrl,\r",
+											"        method: \"POST\",\r",
+											"        header: {\r",
+											"            \"Content-Type\": \"application/json\"\r",
+											"        },\r",
+											"        body: {\r",
+											"            mode: \"raw\",\r",
+											"            raw: JSON.stringify({\r",
+											"                email: email,\r",
+											"                password: password\r",
+											"            })\r",
+											"        }\r",
+											"    }, function (err, res) {\r",
+											"        if (err) {\r",
+											"            console.log(\"Error en la solicitud:\", err);\r",
+											"        } else {\r",
+											"            const token = res.json().token;\r",
+											"            if (token) {\r",
+											"                pm.collectionVariables.set(\"token\", token);\r",
+											"                console.log(\"Token guardado:\", token);\r",
+											"            }\r",
+											"        }\r",
+											"    });\r",
+											"}\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response contains updated event properties\", function () {\r",
+											"    var jsonData = pm.response.json();\r",
+											"    pm.expect(jsonData).to.have.property(\"_id\");\r",
+											"    pm.expect(jsonData.name).to.equal(\"Concierto de Jazz\");\r",
+											"    pm.expect(jsonData.bannerPhotoUrl).to.equal(\"https://example.com/new-banner.jpg\");\r",
+											"    pm.expect(jsonData.isPublic).to.be.false;\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Concierto de Jazz\",\r\n    \"bannerPhotoUrl\": \"https://example.com/new-banner.jpg\",\r\n    \"isPublic\": false\r\n}\r\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/events/{{eventId}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"events",
+										"{{eventId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "DELETE",
+					"item": [
+						{
+							"name": "DELETE EXISTING EVENT",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"if (!pm.collectionVariables.get(\"token\")) {\r",
+											"    pm.sendRequest({\r",
+											"        url: authUrl,\r",
+											"        method: \"POST\",\r",
+											"        header: {\r",
+											"            \"Content-Type\": \"application/json\"\r",
+											"        },\r",
+											"        body: {\r",
+											"            mode: \"raw\",\r",
+											"            raw: JSON.stringify({\r",
+											"                email: email,\r",
+											"                password: password\r",
+											"            })\r",
+											"        }\r",
+											"    }, function (err, res) {\r",
+											"        if (err) {\r",
+											"            console.log(\"Error en la solicitud:\", err);\r",
+											"        } else {\r",
+											"            const token = res.json().token;\r",
+											"            if (token) {\r",
+											"                pm.collectionVariables.set(\"token\", token);\r",
+											"                console.log(\"Token guardado:\", token);\r",
+											"            }\r",
+											"        }\r",
+											"    });\r",
+											"}\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 or 204\", function () {\r",
+											"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Response body is empty or contains success message\", function () {\r",
+											"    var jsonData = pm.response.json();\r",
+											"    pm.expect(jsonData).to.be.an(\"object\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/events/{{eventId}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"events",
+										"{{eventId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"\r",
+					"pm.collectionVariables.set(\"randomEmail\", \"variable_value\");"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "superadminEmail",
+			"value": "alejitocordoba@hotmail.es",
+			"type": "string"
+		},
+		{
+			"key": "eventmanageEmail",
+			"value": "isabella.ocampo@u.icesi.edu.co",
+			"type": "string"
+		},
+		{
+			"key": "userEmail",
+			"value": "valentina.gonzalez3@u.icesi.edu.co",
+			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "password",
+			"type": "string"
+		},
+		{
+			"key": "randomEmail",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "eventId",
+			"value": ""
+		},
+		{
+			"key": "randomEventName",
+			"value": ""
+		}
+	]
+}
