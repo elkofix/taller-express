@@ -6,6 +6,6 @@ export const eventRouter = Router();
 
 eventRouter.get('/', eventController.findAll);
 eventRouter.get('/findEvent/:id', eventController.findById);
-eventRouter.post('/create', eventController.create); // cambiar rol apenas esten los de user 
-eventRouter.put('/update/:id', eventController.update);
-eventRouter.delete('/delete/:id', eventController.delete);
+eventRouter.post('/create', auth, authorizeRoles(['event-manager', 'superadmin']), eventController.create); // cambiar rol apenas esten los de user 
+eventRouter.put('/update/:id', auth, authorizeRoles(['event-manager', 'superadmin']), eventController.update);
+eventRouter.delete('/delete/:id', auth, authorizeRoles(['event-manager', 'superadmin']), eventController.delete);

@@ -2,9 +2,30 @@ import request from "supertest";
 import { app, server } from "../../index";
 import { eventService } from "../../services";
 import { Server } from "http";
+import { auth } from "../../middlewares/auth.middleware";
 
 jest.mock("../../services/event.service");
-
+jest.mock("../../services/security.service");
+jest.mock("../../middlewares/auth.middleware", () => {
+  return {
+    auth: jest.fn((req: any, res: any, next: any) => {
+      req.body.user = {
+        id: "mockUserId",
+        email: "mock@example.com",
+        role: "superadmin", 
+      };
+      next();
+    }),
+    authorizeRoles: jest.fn((allowedRoles: string[]) => {
+      return (req: any, res: any, next: any) => {
+        if (!allowedRoles.includes(req.body.user.role)) {
+          return res.status(403).json({ message: `Forbidden, your role is ${req.body.user.role}` });
+        }
+        next();
+      };
+    }),
+  };
+});
 describe("EventController", () => {
   process.env.NODE_ENV = "test"
   let server: Server;
@@ -245,5 +266,7 @@ describe("EventController", () => {
     });
   
   });
+
+  
   
 });
