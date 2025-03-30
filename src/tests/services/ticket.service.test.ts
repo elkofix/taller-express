@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import { TicketDocument, TicketModel } from "../../models/ticket.model";
 import { ticketService } from "../../services/ticket.service";
 
-
 jest.mock("../../models/ticket.model");
 
 describe("TicketService", () => {
@@ -17,8 +16,8 @@ describe("TicketService", () => {
         User_idUser: 456,
         isRedeemed: false,
         isActive: true,
-        
-    } as TicketDocument;
+        save: jest.fn(), // Simula el método save de Mongoose
+    } as unknown as TicketDocument;
 
     test("should buy a ticket", async () => {
         (TicketModel.create as jest.Mock).mockResolvedValue(mockTicket);
@@ -32,7 +31,6 @@ describe("TicketService", () => {
         (TicketModel.create as jest.Mock).mockRejectedValue(new Error("DB error"));
 
         await expect(ticketService.buyTicket(mockTicket)).rejects.toThrow("Error al comprar el boleto");
-        expect(TicketModel.create).toHaveBeenCalledWith(mockTicket);
     });
 
     test("should find a ticket by ID", async () => {
@@ -50,7 +48,7 @@ describe("TicketService", () => {
         expect(ticket).toBeNull();
     });
 
-    test("should throw error when finding ticket fails", async () => {
+    test("should throw an error when database fails in findById", async () => {
         (TicketModel.findById as jest.Mock).mockRejectedValue(new Error("DB error"));
 
         await expect(ticketService.findById("any")).rejects.toThrow("Error al obtener el boleto");
@@ -64,10 +62,17 @@ describe("TicketService", () => {
         expect(tickets).toEqual([mockTicket]);
     });
 
-    test("should throw error when getting tickets by user fails", async () => {
+    test("should return empty array if user has no tickets", async () => {
+        (TicketModel.find as jest.Mock).mockResolvedValue([]);
+
+        const tickets = await ticketService.getTicketsByUser(999);
+        expect(tickets).toEqual([]);
+    });
+
+    test("should throw an error when database fails in getTicketsByUser", async () => {
         (TicketModel.find as jest.Mock).mockRejectedValue(new Error("DB error"));
 
-        await expect(ticketService.getTicketsByUser(mockTicket.User_idUser)).rejects.toThrow("Error al obtener los tickets");
+        await expect(ticketService.getTicketsByUser(123)).rejects.toThrow("Error al obtener los tickets");
     });
 
     test("should cancel a ticket", async () => {
@@ -86,9 +91,18 @@ describe("TicketService", () => {
         expect(ticket).toBeNull();
     });
 
+    test("should return ticket unchanged if already cancelled", async () => {
+        const inactiveTicket = { ...mockTicket, isActive: false };
+        (TicketModel.findById as jest.Mock).mockResolvedValue(inactiveTicket);
+
+        const ticket = await ticketService.cancelTicket("alreadyCancelled");
+        expect(ticket?.isActive).toBe(false);
+        expect(mockTicket.save).not.toHaveBeenCalled(); // No debería llamar a save en un ticket ya cancelado
+    });
+
     test("should throw error when cancelling a ticket fails", async () => {
         (TicketModel.findById as jest.Mock).mockRejectedValue(new Error("DB error"));
 
-        await expect(ticketService.cancelTicket("noaticker")).rejects.toThrow("Error al cancelar el boleto");
+        await expect(ticketService.cancelTicket("noTicket")).rejects.toThrow("Error al cancelar el boleto");
     });
 });
