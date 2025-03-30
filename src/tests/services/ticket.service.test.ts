@@ -1,111 +1,94 @@
 import mongoose from "mongoose";
-//import { TicketModel, TicketDocument } from "../../models";
-import { ticketService } from "../../services/ticket.service";
 import { TicketDocument, TicketModel } from "../../models/ticket.model";
+import { ticketService } from "../../services/ticket.service";
 
 
 jest.mock("../../models/ticket.model");
 
 describe("TicketService", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
 
-  const mockTicket: TicketDocument = {
-    _id: new mongoose.Types.ObjectId(),
-    buyDate: new Date(),
-    Presentation_idPresentation: 10,
-    User_idUser: 1,
-    isRedeemed: false,
-    isActive: true,
-  } as TicketDocument;
+    const mockTicket: TicketDocument = {
+        _id: new mongoose.Types.ObjectId(),
+        buyDate: new Date(),
+        Presentation_idPresentation: 123,
+        User_idUser: 456,
+        isRedeemed: false,
+        isActive: true,
+        
+    } as TicketDocument;
 
-  describe("buyTicket", () => {
-    it("debería comprar un ticket exitosamente", async () => {
+    test("should buy a ticket", async () => {
         (TicketModel.create as jest.Mock).mockResolvedValue(mockTicket);
 
-        const newTicket = {
-            Presentation_idPresentation: 10,
-            User_idUser: 1,
-            buyDate: new Date(), // Propiedad requerida
-            isRedeemed: false,    // Propiedad requerida
-            isActive: true        // Propiedad requerida
-        };
-
-        const ticket = await ticketService.buyTicket(newTicket);
-
-        expect(TicketModel.create).toHaveBeenCalledWith(newTicket);
+        const ticket = await ticketService.buyTicket(mockTicket);
+        expect(TicketModel.create).toHaveBeenCalledWith(mockTicket);
         expect(ticket).toEqual(mockTicket);
     });
 
-    it("debería lanzar un error si la compra falla", async () => {
+    test("should throw error when buying a ticket fails", async () => {
         (TicketModel.create as jest.Mock).mockRejectedValue(new Error("DB error"));
 
-        const newTicket = {
-            Presentation_idPresentation: 10,
-            User_idUser: 1,
-            buyDate: new Date(), // Propiedad requerida
-            isRedeemed: false,    // Propiedad requerida
-            isActive: true        // Propiedad requerida
-        };
-
-        await expect(ticketService.buyTicket(newTicket))
-            .rejects.toThrow("DB error");
-
-        expect(TicketModel.create).toHaveBeenCalledWith(newTicket);
-    });
+        await expect(ticketService.buyTicket(mockTicket)).rejects.toThrow("Error al comprar el boleto");
+        expect(TicketModel.create).toHaveBeenCalledWith(mockTicket);
     });
 
+    test("should find a ticket by ID", async () => {
+        (TicketModel.findById as jest.Mock).mockResolvedValue(mockTicket);
 
-    describe("cancelTicket", () => {
-        const mockTicket: Partial<TicketDocument> = {
-            _id: new mongoose.Types.ObjectId() as any, // Asegurar que tenga un tipo correcto
-            Presentation_idPresentation: 10,
-            User_idUser: 1,
-            buyDate: new Date(),
-            isRedeemed: false,
-            isActive: true,
-            save: jest.fn().mockResolvedValue(true) // Mockear save()
-        };
-    
-        it("debería cancelar un ticket exitosamente", async () => {
-            (TicketModel.findById as jest.Mock).mockResolvedValue(mockTicket);
-    
-            const result = await ticketService.cancelTicket(mockTicket._id!.toString());
-    
-            expect(TicketModel.findById).toHaveBeenCalledWith(mockTicket._id!.toString());
-            expect(mockTicket.isActive).toBe(false);
-            expect(mockTicket.save).toHaveBeenCalled(); // Verificar que se llama a save()
-            expect(result).toEqual(mockTicket);
-        });
-    });
-    
-
-  describe("getTicketsByUser", () => {
-    it("debería retornar los tickets de un usuario", async () => {
-      (TicketModel.find as jest.Mock).mockResolvedValue([mockTicket]);
-
-      const tickets = await ticketService.getTicketsByUser(mockTicket.User_idUser);
-
-      expect(TicketModel.find).toHaveBeenCalledWith({ User_idUser: mockTicket.User_idUser });
-      expect(tickets).toEqual([mockTicket]);
+        const ticket = await ticketService.findById("anyid");
+        expect(TicketModel.findById).toHaveBeenCalledWith("anyid");
+        expect(ticket).toEqual(mockTicket);
     });
 
-    it("debería retornar un array vacío si el usuario no tiene tickets", async () => {
-      (TicketModel.find as jest.Mock).mockResolvedValue([]);
+    test("should return null if ticket not found", async () => {
+        (TicketModel.findById as jest.Mock).mockResolvedValue(null);
 
-      const tickets = await ticketService.getTicketsByUser(mockTicket.User_idUser);
-
-      expect(TicketModel.find).toHaveBeenCalledWith({ User_idUser: mockTicket.User_idUser });
-      expect(tickets).toEqual([]);
+        const ticket = await ticketService.findById("nonexistentId");
+        expect(ticket).toBeNull();
     });
 
-    it("debería lanzar un error si la consulta falla", async () => {
-      (TicketModel.find as jest.Mock).mockRejectedValue(new Error("DB error"));
+    test("should throw error when finding ticket fails", async () => {
+        (TicketModel.findById as jest.Mock).mockRejectedValue(new Error("DB error"));
 
-      await expect(ticketService.getTicketsByUser(mockTicket.User_idUser)).rejects.toThrow("DB error");
-
-      expect(TicketModel.find).toHaveBeenCalledWith({ User_idUser: mockTicket.User_idUser });
+        await expect(ticketService.findById("any")).rejects.toThrow("Error al obtener el boleto");
     });
-  });
+
+    test("should get tickets by user", async () => {
+        (TicketModel.find as jest.Mock).mockResolvedValue([mockTicket]);
+
+        const tickets = await ticketService.getTicketsByUser(mockTicket.User_idUser);
+        expect(TicketModel.find).toHaveBeenCalledWith({ User_idUser: mockTicket.User_idUser });
+        expect(tickets).toEqual([mockTicket]);
+    });
+
+    test("should throw error when getting tickets by user fails", async () => {
+        (TicketModel.find as jest.Mock).mockRejectedValue(new Error("DB error"));
+
+        await expect(ticketService.getTicketsByUser(mockTicket.User_idUser)).rejects.toThrow("Error al obtener los tickets");
+    });
+
+    test("should cancel a ticket", async () => {
+        const cancelledTicket = { ...mockTicket, isActive: false };
+        (TicketModel.findById as jest.Mock).mockResolvedValue(mockTicket);
+        (mockTicket.save as jest.Mock).mockResolvedValue(cancelledTicket);
+
+        const ticket = await ticketService.cancelTicket("any");
+        expect(ticket?.isActive).toBe(false);
+    });
+
+    test("should return null if trying to cancel a non-existing ticket", async () => {
+        (TicketModel.findById as jest.Mock).mockResolvedValue(null);
+
+        const ticket = await ticketService.cancelTicket("nonexistentId");
+        expect(ticket).toBeNull();
+    });
+
+    test("should throw error when cancelling a ticket fails", async () => {
+        (TicketModel.findById as jest.Mock).mockRejectedValue(new Error("DB error"));
+
+        await expect(ticketService.cancelTicket("noaticker")).rejects.toThrow("Error al cancelar el boleto");
+    });
 });

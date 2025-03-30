@@ -65,7 +65,7 @@ class TicketController {
             
             res.status(200).json({ message: "Ticket successfully canceled", ticket });
         } catch (error) {
-            res.status(404).json({ message: "Error canceling ticket" });
+            res.status(500).json({ message: "Error canceling ticket" });
         }
     }
 
