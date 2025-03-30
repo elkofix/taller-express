@@ -3,60 +3,77 @@ import { TicketDocument, TicketInput, TicketModel } from "../models/ticket.model
 
 class TicketService{
 
-
-    async create(data: TicketInput){
+    //Comprar un boleto
+    async create(data: TicketInput): Promise<TicketDocument>{
         try{
             const ticket = await TicketModel.create(data);
-            const msg = `Ticket ${ticket.Presentation_idPresentation} created successfully`;
+            const msg = `Ticket creado con éxito para la presentación ${ticket.Presentation_idPresentation}`;
             console.log(msg);
             return ticket;
         }catch(error){
-            throw error;
+            console.error("Error al crear ticket:", error);
+            throw new Error("Error al comprar el boleto");
         }
     }
 
-    async findById(id:string){
+    //Comprar un boleto
+    async findById(id:string): Promise<TicketDocument | null>{ 
         try{
-
             const ticket = await TicketModel.findById(id);
             if(!ticket){
-                throw new Error(`Ticket not found with id ${id} `);
+                console.warn(`Ticket not found with id ${id} `);
+                return null;
             }
             const msg = `Ticket ${ticket.Presentation_idPresentation} found successfully`;
             console.log(msg);
             return ticket;
 
         }catch(error){
-            throw error;
+            console.error("Error al buscar ticket:", error);
+            throw new Error("Error al buscar el boleto");
+        
         }
     }
 
-    async getAll():Promise<TicketDocument[]>{
+    //Obtener todos los tickets de un usuario
+    async getTicketsByUser(userId: number):Promise<TicketDocument[]>{
         try{
-            const tickets = await TicketModel.find({});
+            const tickets = await TicketModel.find({User_idUser: userId});
             console.log(`${tickets.length} tickets found successfully`);
             return tickets;
         }catch(error){
-            throw error;
+            console.error("Error al obtener tickets:", error);
+            throw new Error("Error al obtener los tickets");
+            
         }
     }
 
-    async updateTicket(id: string, ticket: TicketInput) {
-        try{
-            const updatedTicket : TicketDocument | null = await TicketModel.findOneAndUpdate(
-                { _id: id },
-                ticket,
-                { returnOriginal: false }
-            );
+    //Cancelar un boleto
 
-            if(!updatedTicket){
-                throw new Error(`Ticket with id ${id} not found`);
+    async cancelTicket(id: string): Promise<TicketDocument | null>{
+        try{
+            const ticket =  await TicketModel.findById(id)
+            if(!ticket){
+                console.warn(`Ticket not found with id ${id} `);
+                return null;
             }
 
-            //updatedTicket.Presentation_idPresentation = "";
+            if(!ticket.isActive){
+                console.warn(`Ticket ${id} is already cancelled`);
+                return ticket;
+            }
+            ticket.isActive = false;
+            await ticket.save();
+            const msg = `Ticket ${ticket.Presentation_idPresentation} cancelled successfully`;
+            console.log(msg);
+            return ticket;
         }catch(error){
-            throw error;
+            console.log("Error al cancelar ticket:", error);
+            throw new Error("Error al cancelar el ticket");
+
         }
     }
 
 }
+
+export default new TicketService();
