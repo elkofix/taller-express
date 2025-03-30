@@ -15,6 +15,19 @@ class SecurityService{
     async comparePasswords( password: string, currentPassword: string){
         return await bcrypt.compare(password, currentPassword);
     }
+
+    async getClaims(token: string): Promise<{_id: string, email: string, role: string}> {
+        try {
+            if (token.startsWith("Bearer ")) {
+                token = token.slice(7); 
+            }
+            return jwt.verify(token, 'secret') as {_id: string, email: string, role: string}; 
+        } catch (error) {
+            throw error
+        }
+    }
+    
+    
 }
 
 export const securityService = new SecurityService();

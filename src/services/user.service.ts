@@ -21,7 +21,7 @@ class UserService{
 
     async getAll():Promise<UserDocument[]>{
         try{
-            const users: UserDocument[] = await UserModel.find();
+            const users: UserDocument[] = await UserModel.find({ isActive: true });
             return users;
         }catch(error){
             console.log(error);
@@ -40,6 +40,20 @@ class UserService{
             throw error;
         }
     }
+
+    async deleteUser(email: string): Promise<UserDocument | null> {
+        try {
+            const updatedUser: UserDocument | null = await UserModel.findOneAndUpdate(
+                { email: email },
+                { isActive: false },
+                { returnOriginal: false }
+            );
+            return updatedUser;
+        } catch (error) {
+            throw error;
+        }
+    }
+    
 
 }
 export const userService = new UserService();

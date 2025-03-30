@@ -7,33 +7,68 @@ class UserController{
     async create(req: Request, res: Response){
         try{
             const userExist : UserDocument | null = await userService.findByEmail(req.body.email);
+
             if(userExist){
                 res.status(400).json({message: `the user ${req.body.email} already exist!`});
                 return;
             }
-            req.body.password = await securityService.encryptPassword(req.body.password);
-            const user: UserDocument = await userService.create(req.body);
-            res.status(201).json(user);
-            return;
 
+            req.body.password = await securityService.encryptPassword(req.body.password);
+
+            const user: UserDocument = await userService.create(req.body);
+
+            res.status(201).json(user);
+
+            return;
         }catch(error){
             res.status(500).json(`the user hasn't been created`)
             return;
         }
     }
 
+
     async findAll(req: Request, res: Response){
         try{
-            const users: UserDocument[] = await userService.getAll();
-            res.json(users);
-            return;
+            const claims = await securityService.getClaims(req.headers.authorization!);
+            if(claims.role == "superadmin"){
+                const users: UserDocument[] = await userService.getAll();
+                res.json(users);
+                return;
+            }else{                
+                const user: UserDocument | null = await userService.findByEmail(claims.email);
+                if(!user){
+                    res.status(404).json(`User with email ${claims.email} not found`);
+                    return;
+                }
+                res.status(200).json(user);
+                return;
+            }
         }catch(error){
             console.log(error);
             res.status(500).json(`cannot get the users`)
             return;
         }
     }
+    
 
+    async delete(req: Request, res: Response) {
+        try {
+            const email: string = req.params.email;
+            const user: UserDocument | null = await userService.deleteUser(email);
+    
+            if (!user) {
+                res.status(404).json({ message: `User ${email} not found.` });
+                return;
+            }
+    
+            res.json({ message: `User ${email} has been deactivated.` });
+            return;
+        } catch (error) {
+            res.status(500).json({ message: `The user ${req.params.email} cannot be deleted.` });
+            return;
+        }
+    }
+    
 
     async update(req: Request, res: Response){
         try{

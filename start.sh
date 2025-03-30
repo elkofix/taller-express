@@ -10,21 +10,6 @@
 
     echo "Verificando si Docker está corriendo..."
 
-    # Verificar si Docker está ejecutándose
-    if ! docker info &>/dev/null; then
-        echo "Docker no está corriendo. Intentando iniciarlo..."
-        open --background -a "Docker"
-        echo "Esperando a que Docker inicie..."
-
-        # Esperar hasta que Docker esté completamente listo
-        while ! docker info &>/dev/null; do
-            sleep 2
-        done
-
-        echo "Docker está listo."
-    else
-        echo "Docker ya está corriendo."
-    fi
 
     # Guardar la ubicación actual
     original_path=$(pwd)
@@ -46,6 +31,3 @@
     # Ejecutar npm run dev dentro de express
     echo "Ejecutando la aplicación..."
     npm run dev
-
-    # Restaurar la ubicación original
-    cd "$original_path"

@@ -45,4 +45,24 @@ describe("SecurityService", () => {
         expect(bcrypt.compare).toHaveBeenCalledWith(mockPassword, mockHash);
         expect(result).toBe(true);
     });
+
+    test("should not get claims", async () => {
+        (jwt.verify as jest.Mock).mockImplementation(() => {
+            throw new Error("Invalid token");
+          });
+
+        await expect(securityService.getClaims(`Beare`)).rejects.toThrow("Invalid token");    
+    });
+
+    test("should get claims", async () => {
+        (jwt.verify as jest.Mock).mockReturnValue({ _id: mockId.toString(), email: mockEmail, role: mockRole });
+    
+        const result = await securityService.getClaims(`Bearer ${mockToken}`);
+    
+        expect(jwt.verify).toHaveBeenCalledWith(mockToken, "secret");
+        expect(result).toEqual({ _id: mockId.toString(), email: mockEmail, role: mockRole });
+    });
+    
+
+    
 });

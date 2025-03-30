@@ -6,6 +6,26 @@ import { Server } from "http";
 
 jest.mock("../../services/user.service");
 jest.mock("../../services/security.service");
+jest.mock("../../middlewares/auth.middleware", () => {
+  return {
+    auth: jest.fn((req: any, res: any, next: any) => {
+      req.body.user = {
+        id: "mockUserId",
+        email: "mock@example.com",
+        role: "superadmin", 
+      };
+      next();
+    }),
+    authorizeRoles: jest.fn((allowedRoles: string[]) => {
+      return (req: any, res: any, next: any) => {
+        if (!allowedRoles.includes(req.body.user.role)) {
+          return res.status(403).json({ message: `Forbidden, your role is ${req.body.user.role}` });
+        }
+        next();
+      };
+    }),
+  };
+});
 
 describe("UserController", () => {
   process.env.NODE_ENV = "test";
@@ -70,7 +90,6 @@ describe("UserController", () => {
 
   it("debería retornar 500 si hay un error interno al crear usuario", async () => {
     (userService.findByEmail as jest.Mock).mockRejectedValue(new Error("DB error"));
-
     const res = await request(app)
       .post("/user")
       .send({
@@ -84,6 +103,7 @@ describe("UserController", () => {
 
   it("debería retornar todos los usuarios", async () => {
     (userService.getAll as jest.Mock).mockResolvedValue([mockUser]);
+    (securityService.getClaims as jest.Mock).mockResolvedValue({ role: "superadmin" });
 
     const res = await request(app).get("/user");
 
@@ -92,14 +112,35 @@ describe("UserController", () => {
     expect(res.body[0].email).toBe(mockUser.email);
   });
 
+
   it("debería retornar 500 si hay un error interno al obtener los usuarios", async () => {
     (userService.getAll as jest.Mock).mockRejectedValue(new Error("DB error"));
-
+    
     const res = await request(app).get("/user");
-
     expect(res.status).toBe(500);
     expect(res.body).toBe("cannot get the users");
   });
+
+  it("debería retornar solo un usuario", async () => {
+    (userService.findByEmail as jest.Mock).mockResolvedValue(mockUser);
+    (securityService.getClaims as jest.Mock).mockResolvedValue({ role: "user" });
+
+    const res = await request(app).get("/user");
+
+    expect(res.status).toBe(200);
+    expect(res.body.email).toBe(mockUser.email);
+  });
+
+
+  it("debería retornar 404 si el usuario del perfil no se encuentra ", async () => {
+    (userService.findByEmail as jest.Mock).mockResolvedValue(null);
+    (securityService.getClaims as jest.Mock).mockResolvedValue({ role: "user" });
+
+    const res = await request(app).get("/user");
+
+    expect(res.status).toBe(404);
+  });
+
 
   it("debería actualizar un usuario exitosamente", async () => {
     (userService.updateUser as jest.Mock).mockResolvedValue(mockUser);
@@ -133,4 +174,38 @@ describe("UserController", () => {
     expect(res.status).toBe(500);
     expect(res.body.message).toBe(`The user ${mockUser.email} cannot be updated.`);
   });
+
+  it("debería retornar 200 si se elimina al usuario satisfactoriamente", async () => {
+    (userService.deleteUser as jest.Mock).mockResolvedValue(mockUser);
+
+    const res = await request(app)
+      .delete(`/user/${mockUser.email}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe(`User ${mockUser.email} has been deactivated.`);
+  });
+
+  it("debería retornar 404 si no se encuentra el usuario y no se elimina al usuario satisfactoriamente", async () => {
+    (userService.deleteUser as jest.Mock).mockResolvedValue(null);
+
+    const res = await request(app)
+      .delete(`/user/${mockUser.email}`);
+      
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe(`User ${mockUser.email} not found.`);
+  });
+
+
+  it("debería retornar 500 hay un error al eliminar al usuario satisfactoriamente", async () => {
+    (userService.deleteUser as jest.Mock).mockRejectedValue(new Error("DB error"));
+
+    const res = await request(app)
+      .delete(`/user/${mockUser.email}`);
+      
+    expect(res.status).toBe(500);
+  });
+
+
 });
+
+
