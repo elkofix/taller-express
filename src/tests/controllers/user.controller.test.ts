@@ -85,7 +85,7 @@ describe("UserController", () => {
       });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe(`the user ${mockUser.email} already exist!`);
+    expect(res.body.message).toBe(`The user ${mockUser.email} already exists!`);
   });
 
   it("debería retornar 500 si hay un error interno al crear usuario", async () => {
@@ -98,7 +98,7 @@ describe("UserController", () => {
       });
 
     expect(res.status).toBe(500);
-    expect(res.body).toBe("the user hasn't been created");
+    expect(res.body.message).toBe("The user hasn't been created");
   });
 
   it("debería retornar todos los usuarios", async () => {
@@ -118,7 +118,7 @@ describe("UserController", () => {
     
     const res = await request(app).get("/user");
     expect(res.status).toBe(500);
-    expect(res.body).toBe("cannot get the users");
+    expect(res.body.message).toBe("Cannot get the users");
   });
 
   it("debería retornar solo un usuario", async () => {

@@ -1,46 +1,85 @@
 import { UserDocument, UserInput, UserModel } from '../models/user.model';
-class UserService{
 
-    async create(data: UserDocument){
-        try{
+class UserService {
+    /**
+     * Creates a new user in the database.
+     * 
+     * @param data - The user data to be stored.
+     * @returns The created user document.
+     * @throws Will throw an error if user creation fails.
+     */
+    async create(data: UserDocument): Promise<UserDocument> {
+        try {
             const user = await UserModel.create(data);
             return user;
-        }catch(error){
+        } catch (error) {
             throw error;
         }
     }
 
-    async findByEmail(email:string){
-        try{
-            const user = await UserModel.findOne({ email : email});
+    /**
+     * Finds a user by email.
+     * 
+     * @param email - The email of the user to find.
+     * @returns The user document if found, otherwise `null`.
+     * @throws Will throw an error if the query fails.
+     */
+    async findByEmail(email: string): Promise<UserDocument | null> {
+        try {
+            const user = await UserModel.findOne({ email: email });
             return user;
-        }catch(error){
+        } catch (error) {
             throw error;
         }
     }
 
-    async getAll():Promise<UserDocument[]>{
-        try{
+    /**
+     * Retrieves all active users.
+     * 
+     * @returns An array of active user documents.
+     * @throws Will throw an error if the query fails.
+     */
+    async getAll(): Promise<UserDocument[]> {
+        try {
             const users: UserDocument[] = await UserModel.find({ isActive: true });
             return users;
-        }catch(error){
+        } catch (error) {
             console.log(error);
             throw error;
         }
     }
 
-    async updateUser(email:string, student: UserInput){
-        try{
-            const updatedUser: UserDocument | null = await UserModel.findOneAndUpdate( { email: email}, student, {returnOriginal: false} );
-            if(updatedUser){
+    /**
+     * Updates a user's information by email.
+     * 
+     * @param email - The email of the user to update.
+     * @param user - The updated user data.
+     * @returns The updated user document or `null` if the user was not found.
+     * @throws Will throw an error if the update fails.
+     */
+    async updateUser(email: string, user: UserInput): Promise<UserDocument | null> {
+        try {
+            const updatedUser: UserDocument | null = await UserModel.findOneAndUpdate(
+                { email: email },
+                user,
+                { returnOriginal: false }
+            );
+            if (updatedUser) {
                 updatedUser.password = "";
             }
             return updatedUser;
-        }catch(error){
+        } catch (error) {
             throw error;
         }
     }
 
+    /**
+     * Soft deletes a user by setting `isActive` to `false`.
+     * 
+     * @param email - The email of the user to deactivate.
+     * @returns The updated user document if found, otherwise `null`.
+     * @throws Will throw an error if the deletion fails.
+     */
     async deleteUser(email: string): Promise<UserDocument | null> {
         try {
             const updatedUser: UserDocument | null = await UserModel.findOneAndUpdate(
@@ -53,7 +92,6 @@ class UserService{
             throw error;
         }
     }
-    
-
 }
+
 export const userService = new UserService();

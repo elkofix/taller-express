@@ -41,7 +41,7 @@ describe("AuthController - Login", () => {
       .send({ email: "notfound@example.com", password: "123456" });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe("user notfound@example.com not found.");
+    expect(res.body.message).toBe("User notfound@example.com not found.");
   });
 
   it("debería retornar 400 si la contraseña es incorrecta", async () => {
@@ -66,7 +66,7 @@ describe("AuthController - Login", () => {
       .send({ email: mockUser.email, password: "123456" });
 
     expect(res.status).toBe(200);
-    expect(res.body.message).toBe("login successfull");
+    expect(res.body.message).toBe("Login successful");
     expect(res.body.token).toBe("fake-jwt-token");
   });
 
