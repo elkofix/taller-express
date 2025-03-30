@@ -14,6 +14,7 @@ app.use(express.json());
 app.use("/user", userRouter);
 app.use("/events", eventRouter);
 app.use("/auth", authRouter);
+app.use("/ticket")
 
 let server: Server; 
 
