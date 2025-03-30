@@ -91,4 +91,29 @@ describe("UserService", () => {
         await expect(userService.updateUser("john@example.com", { name: "Updated Name" } as UserInput)).rejects.toThrow("DB error");    
         expect(UserModel.findOneAndUpdate).toHaveBeenCalled();
     });
+
+    test("should deactivate a user", async () => {
+        const deactivatedUser = { ...mockUser, isActive: false };
+        (UserModel.findOneAndUpdate as jest.Mock).mockResolvedValue(deactivatedUser);
+    
+        const result = await userService.deleteUser("john@example.com");
+        expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { email: "john@example.com" },
+            { isActive: false },
+            { returnOriginal: false }
+        );
+        expect(result).toEqual(deactivatedUser);
+    });
+    
+    test("should throw error and not deactivate a user", async () => {
+        (UserModel.findOneAndUpdate as jest.Mock).mockRejectedValue(new Error("DB error"));
+    
+        await expect(userService.deleteUser("john@example.com")).rejects.toThrow("DB error");
+        expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { email: "john@example.com" },
+            { isActive: false },
+            { returnOriginal: false }
+        );
+    });
+    
 });

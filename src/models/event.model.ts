@@ -4,7 +4,7 @@ export interface EventInput{
     name:string;
     bannerPhotoUrl:string;
     isPublic:boolean;
-    userId:string; //Comprobar conexion con User 
+    userId:string; 
 }
 
 export interface EventDocument extends EventInput, mongoose.Document{}

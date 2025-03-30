@@ -1,28 +1,4 @@
-Write-Host "Verificando si Docker está corriendo..."
 
-# Verificar si Docker está ejecutándose correctamente
-$dockerStatus = docker info --format '{{.ServerVersion}}' 2>$null
-
-if (-not $dockerStatus) {
-    Write-Host "Docker no está corriendo o no responde. Intentando iniciarlo..."
-    Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe" -NoNewWindow
-    Write-Host "Esperando a que Docker inicie..."
-
-    # Esperar hasta que Docker esté completamente listo
-    do {
-        Start-Sleep -Seconds 2
-        $dockerStatus = docker info --format '{{.ServerVersion}}' 2>$null
-    } until ($dockerStatus)
-
-    Write-Host "Docker está listo."
-} else {
-    Write-Host "Docker ya está corriendo."
-}
-
-# Guardar la ubicación actual
-$originalPath = Get-Location
-
-try {
     # Iniciar la aplicación Express
     Write-Host "Iniciando la aplicación Express..."
 
@@ -40,8 +16,3 @@ try {
     # Ejecutar npm run dev dentro de express
     Write-Host "Ejecutando la aplicación..."
     Start-Process "cmd.exe" -ArgumentList "/c npm run dev" -NoNewWindow -Wait
-}
-finally {
-    # Restaurar la ubicación original
-    Set-Location -Path $originalPath
-}
