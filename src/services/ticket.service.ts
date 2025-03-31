@@ -5,6 +5,7 @@ class TicketService {
     // Comprar un boleto
     async buyTicket(data: TicketInput): Promise<TicketDocument> {
         try {
+            data.buyDate= new Date(); // Establecer la fecha de compra
             const ticket = await TicketModel.create(data);
             console.log(` Ticket ${ticket._id} para presentación ${ticket.Presentation_idPresentation} creado con éxito`);
             return ticket;
