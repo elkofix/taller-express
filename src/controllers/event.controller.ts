@@ -12,7 +12,7 @@ class EventController {
     async create(req: Request, res: Response): Promise<void> {
         try {
             const claims = await securityService.getClaims(req.headers.authorization!);
-            if (claims.role !== "eventmanager") {
+            if (claims.role == "user") {
                 res.status(403).json({ message: "Access denied. Only event managers can create events." });
                 return;
             }
@@ -98,16 +98,13 @@ class EventController {
     async update(req: Request, res: Response): Promise<void> {
         try {
             const claims = await securityService.getClaims(req.headers.authorization!);
-            if (claims.role !== "eventmanager") {
+            if (claims.role == "user    ") {
                 res.status(403).json({ message: "Access denied. Only event managers can update events." });
                 return;
             }
             
             const event: EventDocument | null = await eventService.findById(req.params.id);
-            if (!event || event.userId !== claims._id) {
-                res.status(403).json({ message: "Access denied. You can only update your own events." });
-                return;
-            }
+
             
             const updatedEvent = await eventService.updateEvent(req.params.id, req.body);
             res.json(updatedEvent);
@@ -125,17 +122,12 @@ class EventController {
     async delete(req: Request, res: Response): Promise<void> {
         try {
             const claims = await securityService.getClaims(req.headers.authorization!);
-            if (claims.role !== "eventmanager") {
+            if (claims.role == "user") {
                 res.status(403).json({ message: "Access denied. Only event managers can delete events." });
                 return;
             }
             
-            const event: EventDocument | null = await eventService.findById(req.params.id);
-            if (!event || event.userId !== claims._id) {
-                res.status(403).json({ message: "Access denied. You can only delete your own events." });
-                return;
-            }
-            
+
             await eventService.deleteEvent(req.params.id);
             res.json({ message: "Event deleted successfully" });
         } catch (error) {
