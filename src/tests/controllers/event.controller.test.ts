@@ -232,7 +232,7 @@ it("debería devolver 403 si el usuario no es 'eventmanager'", async () => {
 });
 
 it("debería devolver 500 si el servicio de eventos falla", async () => {
-  (securityService.getClaims as jest.Mock).mockResolvedValue({ role: "eventmanager", _id: "user123" });
+  (securityService.getClaims as jest.Mock).mockRejectedValue(new Error("Database error"));
   (eventService.findAllById as jest.Mock).mockRejectedValue(new Error("Database error"));
 
   const res = await request(app)
@@ -258,7 +258,12 @@ it("debería devolver un array vacío si no hay eventos para el usuario", async 
 /////
 
 it("debería actualizar el evento si el usuario es 'eventmanager' y el evento pertenece al usuario", async () => {
-  (securityService.getClaims as jest.Mock).mockResolvedValue({ role: "eventmanager", _id: "user123" });
+  // Mock de claims, asegurando que el rol sea 'eventmanager' y que el _id coincida con el userId del evento
+  const mockClaims = { role: "eventmanager", _id: "user123" };
+  const mockEvent = { _id: "event123", userId: "user123", name: "Test Event", description: "Test description" };
+  const updatedEvent = { _id: "event123", userId: "user123", name: "Updated Event", description: "Updated description" };
+  
+  (securityService.getClaims as jest.Mock).mockResolvedValue(mockClaims);
   (eventService.findById as jest.Mock).mockResolvedValue(mockEvent);
   (eventService.updateEvent as jest.Mock).mockResolvedValue(updatedEvent);
 
@@ -267,9 +272,11 @@ it("debería actualizar el evento si el usuario es 'eventmanager' y el evento pe
       .set("Authorization", "Bearer token")
       .send({ name: "Updated Event", description: "Updated description" });
 
+  // Verifica que el código de estado sea 200 (evento actualizado correctamente)
   expect(res.status).toBe(200);
   expect(res.body).toEqual(updatedEvent);
 });
+
 
 it("debería devolver 403 si el usuario no es 'eventmanager'", async () => {
   (securityService.getClaims as jest.Mock).mockResolvedValue({ role: "admin", _id: "user123" });
@@ -297,18 +304,96 @@ it("debería devolver 403 si el evento no existe o no pertenece al usuario", asy
 });
 
 it("debería devolver 500 si el servicio de eventos falla", async () => {
-  (securityService.getClaims as jest.Mock).mockResolvedValue({ role: "eventmanager", _id: "user123" });
+  // Mock de claims para simular un 'eventmanager'
+  const mockClaims = { role: "eventmanager", _id: "user123" };
+  const mockEvent = { _id: "event123", userId: "user123", name: "Test Event", description: "Test description" };
+
+  // Simulamos que el servicio de eventos falla al buscar o actualizar el evento
+  (securityService.getClaims as jest.Mock).mockRejectedValue(new Error("Service failure"));
   (eventService.findById as jest.Mock).mockResolvedValue(mockEvent);
-  (eventService.updateEvent as jest.Mock).mockRejectedValue(new Error("Database error"));
+
+  // Aquí forzamos un error en el servicio de actualización del evento
+  (eventService.updateEvent as jest.Mock).mockRejectedValue(new Error("Service failure"));
 
   const res = await request(app)
-      .put("/events/update/event123")
+      .put("/events/update/event123") // Asegúrate de que esta ruta sea correcta
       .set("Authorization", "Bearer token")
       .send({ name: "Updated Event", description: "Updated description" });
 
+  // Verificamos que se devuelva un 500 cuando el servicio falla
   expect(res.status).toBe(500);
   expect(res.body).toEqual({ message: "Event hasn't been updated" });
 });
+
+
+///////////
+
+it("debería devolver 403 si el usuario no tiene el rol 'eventmanager'", async () => {
+  const mockClaims = { role: "user", _id: "user123" }; // El rol no es 'eventmanager'
+  const mockEvent = { _id: "event123", userId: "user123", name: "Test Event" };
+
+  (securityService.getClaims as jest.Mock).mockResolvedValue(mockClaims);
+  (eventService.findById as jest.Mock).mockResolvedValue(mockEvent);
+
+  const res = await request(app)
+      .delete("/events/delete/event123") // Ruta DELETE para eliminar el evento
+      .set("Authorization", "Bearer token");
+
+  expect(res.status).toBe(403);
+  expect(res.body).toEqual({ message: "Access denied. Only event managers can delete events." });
+});
+
+it("debería devolver 403 si el evento no pertenece al usuario", async () => {
+  const mockClaims = { role: "eventmanager", _id: "user123" }; // El rol es 'eventmanager'
+  const mockEvent = { _id: "event123", userId: "user456", name: "Test Event" }; // El evento no pertenece al usuario
+
+  (securityService.getClaims as jest.Mock).mockResolvedValue(mockClaims);
+  (eventService.findById as jest.Mock).mockResolvedValue(mockEvent);
+
+  const res = await request(app)
+      .delete("/events/delete/event123") // Ruta DELETE para eliminar el evento
+      .set("Authorization", "Bearer token");
+
+  expect(res.status).toBe(403);
+  expect(res.body).toEqual({ message: "Access denied. You can only delete your own events." });
+});
+
+it("debería devolver 500 si ocurre un error en el servicio de eliminación", async () => {
+  const mockClaims = { role: "eventmanager", _id: "user123" }; // El rol es 'eventmanager'
+  const mockEvent = { _id: "event123", userId: "user123", name: "Test Event" };
+
+  (securityService.getClaims as jest.Mock).mockResolvedValue(mockClaims);
+  (eventService.findById as jest.Mock).mockResolvedValue(mockEvent);
+  
+  // Forzamos un error en el servicio de eliminación
+  (eventService.deleteEvent as jest.Mock).mockRejectedValue(new Error("Service failure"));
+
+  const res = await request(app)
+      .delete("/events/delete/event123") // Ruta DELETE para eliminar el evento
+      .set("Authorization", "Bearer token");
+
+  expect(res.status).toBe(500);
+  expect(res.body).toEqual({ message: "Event hasn't been deleted" });
+});
+
+it("debería devolver 200 y mensaje de éxito si el evento se elimina correctamente", async () => {
+  const mockClaims = { role: "eventmanager", _id: "user123" }; // El rol es 'eventmanager'
+  const mockEvent = { _id: "event123", userId: "user123", name: "Test Event" };
+
+  (securityService.getClaims as jest.Mock).mockResolvedValue(mockClaims);
+  (eventService.findById as jest.Mock).mockResolvedValue(mockEvent);
+
+  // Simulamos una eliminación exitosa
+  (eventService.deleteEvent as jest.Mock).mockResolvedValue(undefined);
+
+  const res = await request(app)
+      .delete("/events/delete/event123") // Ruta DELETE para eliminar el evento
+      .set("Authorization", "Bearer token");
+
+  expect(res.status).toBe(200);
+  expect(res.body).toEqual({ message: "Event deleted successfully" });
+});
+
 
   
 });
