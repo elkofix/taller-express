@@ -39,7 +39,7 @@ class EventController {
                 res.status(404).json({ message: "Event not found" });
                 return;
             }
-            
+            console.log(claims.role)
             if (claims.role === "eventmanager" && event.userId !== claims._id) {
                 res.status(403).json({ message: "Access denied. Event managers can only view their own events." });
                 return;

@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "99800d37-072e-4676-9f0f-822f8d9dbad0",
+		"_postman_id": "cd3b5cdd-a09d-47ed-8169-01ae1e086074",
 		"name": "Integration Test Express",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "38727763"
+		"_exporter_id": "38823104"
 	},
 	"item": [
 		{
@@ -1752,6 +1752,110 @@
 											"    pm.expect(jsonData).to.have.property(\"bannerPhotoUrl\");\r",
 											"    pm.expect(jsonData).to.have.property(\"isPublic\");\r",
 											"    pm.expect(jsonData).to.have.property(\"userId\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/events/findEvent/{{eventId}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"events",
+										"findEvent",
+										"{{eventId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "FIND EVENT BY ID Copy",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Autenticación\r",
+											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
+											"const email = pm.collectionVariables.get(\"eventmanageEmail\");\r",
+											"const password = pm.collectionVariables.get(\"password\");\r",
+											"\r",
+											"const authUrl = `${baseUrl}/auth/login`;\r",
+											"\r",
+											"// Solo realizar la autenticación si no hay token o si ha expirado\r",
+											"    pm.sendRequest({\r",
+											"        url: authUrl,\r",
+											"        method: \"POST\",\r",
+											"        header: {\r",
+											"            \"Content-Type\": \"application/json\"\r",
+											"        },\r",
+											"        body: {\r",
+											"            mode: \"raw\",\r",
+											"            raw: JSON.stringify({\r",
+											"                email: email,\r",
+											"                password: password\r",
+											"            })\r",
+											"        }\r",
+											"    }, function (err, res) {\r",
+											"        if (err) {\r",
+											"            console.log(\"Error en la solicitud:\", err);\r",
+											"        } else {\r",
+											"            const token = res.json().token;\r",
+											"            \r",
+											"            if (token) {\r",
+											"                pm.collectionVariables.set(\"token\", token);\r",
+											"                console.log(\"Token guardado:\", token);\r",
+											"            } else {\r",
+											"                console.log(\"No se encontró un token en la respuesta.\");\r",
+											"            }\r",
+											"        }\r",
+											"    });\r",
+											"\r",
+											"\r",
+											"// Guardar el ID del evento que estás buscando para uso en tests\r",
+											"pm.collectionVariables.set(\"eventId\", \"67e9c22529f77cca654dbefd\");\r",
+											"\r",
+											"console.log(\"Buscando evento con ID:\", pm.collectionVariables.get(\"eventId\"));"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Test for status code\r",
+											"pm.test(\"Status code is 403\", function () {\r",
+											"    pm.response.to.have.status(403);\r",
+											"});\r",
+											"\r",
+											"\r",
+											"// Test for specific message in the response body\r",
+											"pm.test(\"Response body contains specific message\", function () {\r",
+											"    pm.expect(pm.response.json().message).to.include(\"Access denied. Event managers can only v\");\r",
 											"});\r",
 											""
 										],
