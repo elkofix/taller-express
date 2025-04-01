@@ -125,4 +125,30 @@ describe("EventService", () => {
         await expect(eventService.deleteEvent((mockEvent._id as mongoose.Types.ObjectId).toString())).rejects.toThrow("DB error");    
         expect(EventModel.findByIdAndDelete).toHaveBeenCalledWith((mockEvent._id as mongoose.Types.ObjectId).toString());
     });
+
+    test("should find all events by user ID", async () => {
+        (EventModel.find as jest.Mock).mockResolvedValue([mockEvent]);
+    
+        const events = await eventService.findAllById("user123");
+        expect(EventModel.find).toHaveBeenCalledWith({ id: "user123" });
+        expect(events).toEqual([mockEvent]);
+    });
+    
+    test("should return an empty array if no events found for user ID", async () => {
+        (EventModel.find as jest.Mock).mockResolvedValue([]);
+    
+        const events = await eventService.findAllById("user456");
+        expect(EventModel.find).toHaveBeenCalledWith({ id: "user456" });
+        expect(events).toEqual([]);
+    });
+    
+    test("should throw an error when finding events by user ID", async () => {
+        (EventModel.find as jest.Mock).mockRejectedValue(new Error("DB error"));
+    
+        await expect(eventService.findAllById("user123")).rejects.toThrow("DB error");
+        expect(EventModel.find).toHaveBeenCalledWith({ id: "user123" });
+    });
+    
+
+    
 });
