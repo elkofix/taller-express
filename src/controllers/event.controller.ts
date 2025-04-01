@@ -1,67 +1,56 @@
 import { Request, Response } from 'express';
-import { eventService } from '../services';
-import { EventDocument, EventInput } from '../models';
+import { eventService, securityService } from '../services';
+import { EventDocument } from '../models';
 
-/**
- * Controller for handling event-related operations.
- */
 class EventController {
-
     /**
-     * Creates a new event.
+     * Creates a new event. Only accessible to event managers.
      * @param req - Express request object containing event data in the body.
      * @param res - Express response object.
      * @returns A JSON response with the created event or an error message.
      */
     async create(req: Request, res: Response): Promise<void> {
         try {
-            const { name, bannerPhotoUrl, isPublic, userId } = req.body;
+            const claims = await securityService.getClaims(req.headers.authorization!);
+            if (claims.role !== "eventmanager") {
+                res.status(403).json({ message: "Access denied. Only event managers can create events." });
+                return;
+            }
             
-            // Validation for required fields
-            if (!name || !bannerPhotoUrl || isPublic === undefined || !userId) {
-                res.status(400).json({ message: "Missing required fields: name, bannerPhotoUrl, isPublic, or userId" });
-                return;
-            }
-    
-            // Type validation for isPublic
-            if (typeof isPublic !== "boolean") {
-                res.status(400).json({ message: "isPublic must be a boolean" });
-                return;
-            }
-    
-            const event: EventDocument = await eventService.create(req.body);
+            const event: EventDocument = await eventService.create({ ...req.body, userId: claims._id });
             res.status(201).json(event);
-            return;
-
         } catch (error) {
             res.status(500).json({ message: "Event hasn't been created" });
-            return;
         }
     }
-    
+
     /**
-     * Finds an event by its ID.
+     * Finds an event by its ID. Event managers can only view their own events.
      * @param req - Express request object containing the event ID in the parameters.
      * @param res - Express response object.
      * @returns A JSON response with the event data or an error message.
      */
     async findById(req: Request, res: Response): Promise<void> {
         try {
+            const claims = await securityService.getClaims(req.headers.authorization!);
             const event: EventDocument | null = await eventService.findById(req.params.id);
             
             if (!event) {
                 res.status(404).json({ message: "Event not found" });
                 return;
             }
-    
+            
+            if (claims.role === "eventmanager" && event.userId !== claims._id) {
+                res.status(403).json({ message: "Access denied. Event managers can only view their own events." });
+                return;
+            }
+            
             res.json(event);
-            return;
         } catch (error) {
             res.status(500).json({ message: "Event not found" });
-            return;
         }
     }
-    
+
     /**
      * Retrieves all events.
      * @param req - Express request object.
@@ -80,47 +69,79 @@ class EventController {
     }
 
     /**
-     * Updates an event by its ID.
+     * Finds all events related to a specific user.
+     * @param req - Express request object containing the user ID in the parameters.
+     * @param res - Express response object.
+     * @returns A JSON response with an array of events or an error message.
+     */
+    async findByUserId(req: Request, res: Response): Promise<void> {
+        try {
+            const claims = await securityService.getClaims(req.headers.authorization!);
+            if (claims.role !== "eventmanager") {
+                res.status(403).json({ message: "Access denied. Only event managers can view their own events." });
+                return;
+            }
+            
+            const events: EventDocument[] = await eventService.findAllById(req.params.id);
+            res.json(events);
+        } catch (error) {
+            res.status(500).json({ message: "Events not found" });
+        }
+    }
+
+    /**
+     * Updates an event by its ID. Only the event owner (event manager) can update their own events.
      * @param req - Express request object containing the event ID in the parameters and new data in the body.
      * @param res - Express response object.
      * @returns A JSON response with the updated event or an error message.
      */
     async update(req: Request, res: Response): Promise<void> {
         try {
-            const event: EventDocument = await eventService.updateEvent(req.params.id, req.body);
-            res.json(event);
-            return;
+            const claims = await securityService.getClaims(req.headers.authorization!);
+            if (claims.role !== "eventmanager") {
+                res.status(403).json({ message: "Access denied. Only event managers can update events." });
+                return;
+            }
+            
+            const event: EventDocument | null = await eventService.findById(req.params.id);
+            if (!event || event.userId !== claims._id) {
+                res.status(403).json({ message: "Access denied. You can only update your own events." });
+                return;
+            }
+            
+            const updatedEvent = await eventService.updateEvent(req.params.id, req.body);
+            res.json(updatedEvent);
         } catch (error) {
             res.status(500).json({ message: "Event hasn't been updated" });
-            return;
         }
     }
 
     /**
-     * Deletes an event by its ID.
+     * Deletes an event by its ID. Only the event owner (event manager) can delete their own events.
      * @param req - Express request object containing the event ID in the parameters.
      * @param res - Express response object.
      * @returns A JSON response confirming deletion or an error message.
      */
     async delete(req: Request, res: Response): Promise<void> {
         try {
-            const event: EventDocument | null = await eventService.deleteEvent(req.params.id);
-    
-            if (!event) {
-                res.status(404).json({ message: "Event not found" });
+            const claims = await securityService.getClaims(req.headers.authorization!);
+            if (claims.role !== "eventmanager") {
+                res.status(403).json({ message: "Access denied. Only event managers can delete events." });
                 return;
             }
-    
-            res.json(event);
-            return;
+            
+            const event: EventDocument | null = await eventService.findById(req.params.id);
+            if (!event || event.userId !== claims._id) {
+                res.status(403).json({ message: "Access denied. You can only delete your own events." });
+                return;
+            }
+            
+            await eventService.deleteEvent(req.params.id);
+            res.json({ message: "Event deleted successfully" });
         } catch (error) {
             res.status(500).json({ message: "Event hasn't been deleted" });
-            return;
         }
     }
 }
 
-/**
- * Instance of EventController for handling event routes.
- */
 export const eventController = new EventController();

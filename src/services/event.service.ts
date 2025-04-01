@@ -56,6 +56,23 @@ class EventService {
         }
     }
 
+
+    /**
+     * Finds all events related to a specific user.
+     * @param id - The user ID to search for.
+     * @returns An array of event documents associated with the user.
+     */
+    async findAllById(id: string): Promise<EventDocument[]> {
+        try {
+            const events: EventDocument[] = await EventModel.find({ id });
+            const msg = `Found ${events.length} events for user ${id}`;
+            console.log(msg);
+            return events;
+        } catch (error) {
+            console.error(`Error finding events for user ${id}:`, error);
+            throw error;
+        }
+    }
     /**
      * Updates an event by its ID.
      * @param id - The event ID.
