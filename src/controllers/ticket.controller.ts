@@ -49,34 +49,35 @@ class TicketController {
     /**
      * Obtener detalles de un ticket.
      */
-    async getTicketDetails(req: Request, res: Response): Promise<void> {
+     getTicketDetails = async (req: Request, res: Response): Promise<void> => { 
         try {
             const { ticketId } = req.params;
             const currentUser = req.body.user;
-
-            const ticket: TicketDocument | null = await ticketService.findById(ticketId);
+    
+            const ticket = await ticketService.findById(ticketId);
             if (!ticket) {
                 res.status(404).json({ message: "Ticket not found" });
             }
-
-            if (!ticket) {
-                return; // Exit early if ticket is null
-            }
-            const permission = await this.hasPermissionToManageTicket(currentUser, ticket);
+    
+            // Solo llamar a hasPermissionToManageTicket si el ticket no es null
+            const permission = await this.hasPermissionToManageTicket(currentUser, ticket as TicketDocument);
             if (permission.status !== 200) {
                 res.status(permission.status).json({ message: permission.message });
             }
-
-            res.status(200).json(ticket);
+    
+                res.status(200).json(ticket);
         } catch (error) {
+            console.error("Error retrieving ticket:", error);
             res.status(500).json({ message: "Error retrieving ticket", error });
         }
     }
+    
+    
 
     /**
      * Cancelar un ticket.
      */
-    async cancelTicket(req: Request, res: Response): Promise<void> {
+     cancelTicket = async (req: Request, res: Response): Promise<void> => {
         try {
             const { ticketId } = req.params;
             const currentUser = req.body.user;
