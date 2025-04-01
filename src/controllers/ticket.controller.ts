@@ -2,12 +2,20 @@ import { Request, Response } from "express";
 import { TicketDocument } from "../models/ticket.model";
 import { ticketService } from "../services/ticket.service";
 
+/**
+ * Controller responsible for handling ticket-related actions such as 
+ * purchasing, getting details, canceling, and retrieving user tickets.
+ */
 class TicketController {
     
-    // Métodos de la clase
-    
+    // Methods of the class
+
     /**
-     * Comprueba si el usuario tiene permisos para realizar una acción en un ticket
+     * Checks if the user has permission to manage a specific ticket.
+     * 
+     * @param user - The current user trying to perform the action.
+     * @param ticket - The ticket to check permissions for.
+     * @returns An object with a status code and message indicating whether permission is granted.
      */
     private async hasPermissionToManageTicket(user: any, ticket: TicketDocument) {
         if (user.role === 'user' && ticket.User_idUser !== user.id) {
@@ -23,7 +31,11 @@ class TicketController {
     }
 
     /**
-     * Comprar un ticket.
+     * Purchases a ticket for a specific presentation.
+     * 
+     * @param req - The request object containing the ticket data.
+     * @param res - The response object to send the result.
+     * @returns A JSON response with the created ticket or an error message.
      */
     async buyTicket(req: Request, res: Response): Promise<void> {
         try {
@@ -34,7 +46,7 @@ class TicketController {
                 res.status(400).json({ message: "Missing required fields" });
             }
 
-            // Verificación de permisos para comprar un ticket
+            // Verifying permission to buy a ticket
             if (currentUser.role === 'user' && User_idUser !== currentUser.id) {
                 res.status(403).json({ message: "You can only buy tickets for yourself" });
             }
@@ -47,9 +59,13 @@ class TicketController {
     }
 
     /**
-     * Obtener detalles de un ticket.
+     * Retrieves the details of a specific ticket.
+     * 
+     * @param req - The request object containing the ticket ID.
+     * @param res - The response object to send the result.
+     * @returns A JSON response with the ticket details or an error message.
      */
-     getTicketDetails = async (req: Request, res: Response): Promise<void> => { 
+    getTicketDetails = async (req: Request, res: Response): Promise<void> => { 
         try {
             const { ticketId } = req.params;
             const currentUser = req.body.user;
@@ -59,25 +75,27 @@ class TicketController {
                 res.status(404).json({ message: "Ticket not found" });
             }
     
-            // Solo llamar a hasPermissionToManageTicket si el ticket no es null
+            // Only call hasPermissionToManageTicket if the ticket is not null
             const permission = await this.hasPermissionToManageTicket(currentUser, ticket as TicketDocument);
             if (permission.status !== 200) {
                 res.status(permission.status).json({ message: permission.message });
             }
     
-                res.status(200).json(ticket);
+            res.status(200).json(ticket);
         } catch (error) {
             console.error("Error retrieving ticket:", error);
             res.status(500).json({ message: "Error retrieving ticket", error });
         }
     }
-    
-    
 
     /**
-     * Cancelar un ticket.
+     * Cancels a specific ticket.
+     * 
+     * @param req - The request object containing the ticket ID.
+     * @param res - The response object to send the result.
+     * @returns A JSON response confirming cancellation or an error message.
      */
-     cancelTicket = async (req: Request, res: Response): Promise<void> => {
+    cancelTicket = async (req: Request, res: Response): Promise<void> => {
         try {
             const { ticketId } = req.params;
             const currentUser = req.body.user;
@@ -103,7 +121,11 @@ class TicketController {
     }
 
     /**
-     * Obtener tickets de un usuario.
+     * Retrieves all tickets associated with a specific user.
+     * 
+     * @param req - The request object containing the user ID.
+     * @param res - The response object to send the result.
+     * @returns A JSON response with the list of tickets or an error message.
      */
     async getUserTickets(req: Request, res: Response): Promise<void> {
         try {
@@ -127,5 +149,3 @@ class TicketController {
 }
 
 export const ticketController = new TicketController();
-
-///////////////

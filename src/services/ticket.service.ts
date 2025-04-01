@@ -2,9 +2,18 @@ import { TicketDocument, TicketInput, TicketModel } from "../models/ticket.model
 import { EventModel } from "../models/event.model";
 import mongoose from "mongoose";
 
+/**
+ * Servicio encargado de gestionar la compra, consulta, actualización y cancelación de boletos.
+ */
 class TicketService {
     
-    // Comprar un boleto
+    /**
+     * Comprar un boleto para una presentación específica.
+     * 
+     * @param data - Los datos necesarios para crear un boleto.
+     * @returns El ticket recién creado.
+     * @throws Error si ocurre algún problema durante la creación del ticket.
+     */
     async buyTicket(data: TicketInput): Promise<TicketDocument> {
         try {
             data.buyDate = new Date(); // Establecer la fecha de compra
@@ -18,7 +27,13 @@ class TicketService {
         }
     }
 
-    // Buscar ticket por ID
+    /**
+     * Buscar un ticket por su ID.
+     * 
+     * @param id - El ID del ticket que se desea buscar.
+     * @returns El ticket correspondiente si se encuentra, o null si no existe.
+     * @throws Error si ocurre algún problema durante la búsqueda del ticket.
+     */
     async findById(id: string): Promise<TicketDocument | null> {
         try {
             const ticket = await TicketModel.findById(id);
@@ -34,7 +49,12 @@ class TicketService {
         }
     }
 
-    // Obtener todos los tickets
+    /**
+     * Obtener todos los tickets registrados.
+     * 
+     * @returns Una lista de todos los tickets.
+     * @throws Error si ocurre algún problema durante la obtención de los tickets.
+     */
     async findAll(): Promise<TicketDocument[]> {
         try {
             const tickets = await TicketModel.find();
@@ -46,7 +66,13 @@ class TicketService {
         }
     }
 
-    // Obtener todos los tickets de un usuario
+    /**
+     * Obtener todos los tickets de un usuario específico.
+     * 
+     * @param userId - El ID del usuario cuyos tickets se desean obtener.
+     * @returns Una lista de tickets pertenecientes al usuario.
+     * @throws Error si ocurre algún problema durante la obtención de los tickets del usuario.
+     */
     async getTicketsByUser(userId: number): Promise<TicketDocument[]> {
         try {
             const tickets = await TicketModel.find({ User_idUser: userId });
@@ -58,24 +84,23 @@ class TicketService {
         }
     }
     
-    // Obtener tickets para un event-manager
+    /**
+     * Obtener todos los tickets asociados a un event-manager.
+     * 
+     * @param eventManagerId - El ID del event-manager cuyos tickets se desean obtener.
+     * @returns Una lista de tickets asociados a presentaciones gestionadas por el event-manager.
+     * @throws Error si ocurre algún problema durante la obtención de los tickets.
+     */
     async getTicketsByEventManager(eventManagerId: number): Promise<TicketDocument[]> {
         try {
-            // Asumimos que hay una relación entre Event y Presentation
-            // donde cada presentación está asociada a un evento
-            
-            // 1. Obtenemos los eventos gestionados por este event-manager
+            // Obtener eventos gestionados por el event-manager
             const events = await EventModel.find({ userId: eventManagerId.toString() });
             
-            // 2. Asumimos que existe una relación donde Presentation tiene un campo eventId
-            // que lo relaciona con un evento específico
-            // Necesitamos hacer un join entre tickets y presentaciones para encontrar esta relación
-            
-            // Esta es una consulta de ejemplo que necesitarías adaptar según tu esquema real
+            // Consultar tickets asociados a presentaciones de los eventos
             const tickets = await TicketModel.aggregate([
                 {
                     $lookup: {
-                        from: "presentations", // Nombre de la colección de presentaciones
+                        from: "presentations",
                         localField: "Presentation_idPresentation",
                         foreignField: "_id",
                         as: "presentation"
@@ -98,34 +123,42 @@ class TicketService {
         }
     }
 
-    // Verificar si un event-manager está asociado a una presentación
+    /**
+     * Verificar si un event-manager está asociado a una presentación.
+     * 
+     * @param eventManagerId - El ID del event-manager.
+     * @param presentationId - El ID de la presentación.
+     * @returns True si el event-manager está asociado a la presentación, false si no lo está.
+     * @throws Error si ocurre algún problema durante la verificación.
+     */
     async isEventManagerOfPresentation(eventManagerId: number, presentationId: number): Promise<boolean> {
         try {
-            // Similar al método anterior, necesitamos verificar la relación entre
-            // el event-manager y la presentación a través del evento
-            
-            // 1. Buscar la presentación
-            // Asumimos que hay un modelo de Presentation con un campo eventId
+            // Buscar la presentación
             const presentation = await mongoose.model("Presentation").findById(presentationId);
-            
             if (!presentation) {
                 return false;
             }
             
-            // 2. Verificar si el evento pertenece al event-manager
+            // Verificar si el evento está gestionado por el event-manager
             const event = await EventModel.findOne({
                 _id: presentation.eventId,
                 userId: eventManagerId.toString()
             });
             
-            return !!event; // True si encontramos un evento que coincide
+            return !!event; // Retorna true si el event-manager está asociado
         } catch (error) {
             console.error("Error al verificar event-manager de presentación:", error);
             throw new Error("Error al verificar permisos del gestor de eventos");
         }
     }
 
-    // Cancelar un boleto
+    /**
+     * Cancelar un boleto existente.
+     * 
+     * @param id - El ID del ticket que se desea cancelar.
+     * @returns El ticket cancelado, o null si no se encuentra el ticket.
+     * @throws Error si ocurre algún problema durante la cancelación del ticket.
+     */
     async cancelTicket(id: string): Promise<TicketDocument | null> {
         try {
             const ticket = await TicketModel.findById(id);
@@ -149,7 +182,14 @@ class TicketService {
         }
     }
     
-    // Actualizar un ticket
+    /**
+     * Actualizar los datos de un ticket existente.
+     * 
+     * @param id - El ID del ticket a actualizar.
+     * @param updateData - Los datos a actualizar en el ticket.
+     * @returns El ticket actualizado, o null si no se encuentra el ticket.
+     * @throws Error si ocurre algún problema durante la actualización del ticket.
+     */
     async updateTicket(id: string, updateData: Partial<TicketInput>): Promise<TicketDocument | null> {
         try {
             const ticket = await TicketModel.findByIdAndUpdate(
@@ -173,6 +213,3 @@ class TicketService {
 }
 
 export const ticketService = new TicketService();
-
-
-/////////

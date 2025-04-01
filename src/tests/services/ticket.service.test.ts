@@ -1,4 +1,4 @@
-/* import mongoose from "mongoose";
+import mongoose from "mongoose";
 import { TicketDocument, TicketModel } from "../../models/ticket.model";
 import { ticketService } from "../../services/ticket.service";
 import { EventModel } from "../../models";
@@ -253,4 +253,3 @@ describe("TicketService", () => {
 
 
 });
- */

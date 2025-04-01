@@ -5,7 +5,7 @@ import { app } from "../../index";  // Asegúrate de que 'app' esté exportado
 import { ticketService } from "../../services/ticket.service";  // Mockear los servicios
 
 // Mock de middlewares
-jest.mock("../middlewares/auth.middleware", () => ({
+jest.mock("../../middlewares/auth.middleware", () => ({
   auth: jest.fn((req: Request, res: Response, next: NextFunction) => next()), // Especificar tipos
   authorizeRoles: jest.fn((roles: string[]) => (req: Request, res: Response, next: NextFunction) => next()), // Especificar tipos
 }));
