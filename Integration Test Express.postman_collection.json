@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "782c5360-1303-43a1-8b29-35b218985533",
+		"_postman_id": "99800d37-072e-4676-9f0f-822f8d9dbad0",
 		"name": "Integration Test Express",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "38823104"
+		"_exporter_id": "38727763"
 	},
 	"item": [
 		{
@@ -2265,6 +2265,65 @@
 					"name": "POST",
 					"item": [
 						{
+							"name": "CREATE TICKET WITHOUT TOKEN",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"// Asegurarse de que el token NO está en los headers\r",
+											"pm.request.headers.clear();\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Debe devolver 401 si no hay token\", function () {\r",
+											"    pm.response.to.have.status(401);\r",
+											"    pm.response.to.have.jsonBody();\r",
+											"    pm.expect(pm.response.json()).to.have.property(\"message\", \"Unauthorized\");\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"Presentation_idPresentation\": 123,\r\n  \"User_idUser\": \"4556\",\r\n  \"isRedeemed\": false,\r\n  \"isActive\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/ticket/buy",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"ticket",
+										"buy"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "CREATE TICKET",
 							"event": [
 								{
@@ -2356,11 +2415,21 @@
 								}
 							],
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
 								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"Presentation_idPresentation\": 123,\r\n  \"User_idUser\": \"456\",\r\n  \"isRedeemed\": false,\r\n  \"isActive\": true\r\n}\r\n",
+									"raw": "{\r\n  \"Presentation_idPresentation\": 1234,\r\n  \"User_idUser\": \"456\",\r\n  \"isRedeemed\": false,\r\n  \"isActive\": true\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2385,6 +2454,64 @@
 				{
 					"name": "GET",
 					"item": [
+						{
+							"name": "GET DETAILS WITHOUT AUTH",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Test for status code\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Test for response body properties\r",
+											"pm.test(\"Response body has required properties\", function () {\r",
+											"    pm.response.json().forEach(ticket => {\r",
+											"        pm.expect(ticket).to.have.property(\"_id\");\r",
+											"        pm.expect(ticket).to.have.property(\"buyDate\");\r",
+											"        pm.expect(ticket).to.have.property(\"Presentation_idPresentation\");\r",
+											"        pm.expect(ticket).to.have.property(\"User_idUser\");\r",
+											"        pm.expect(ticket).to.have.property(\"isRedeemed\");\r",
+											"        pm.expect(ticket).to.have.property(\"isActive\");\r",
+											"        pm.expect(ticket).to.have.property(\"__v\");\r",
+											"    });\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/ticket/user/{{userId}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"ticket",
+										"user",
+										"{{userId}}"
+									]
+								}
+							},
+							"response": []
+						},
 						{
 							"name": "FIND ALL TICKETS USER",
 							"event": [
@@ -2469,6 +2596,16 @@
 								"disableBodyPruning": true
 							},
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
 								"method": "GET",
 								"header": [],
 								"body": {
@@ -2571,6 +2708,16 @@
 								"disableBodyPruning": true
 							},
 							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
 								"method": "GET",
 								"header": [],
 								"body": {
@@ -2601,7 +2748,7 @@
 					"name": "DELETE",
 					"item": [
 						{
-							"name": "CANCEL TICKET",
+							"name": "CANCEL TICKET WITHOUT AUTH",
 							"event": [
 								{
 									"listen": "prerequest",
@@ -2645,13 +2792,12 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code is 200 or 204\", function () {\r",
-											"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+											"pm.test(\"Status code is 401\", function () {\r",
+											"    pm.response.to.have.status(401);\r",
 											"});\r",
 											"\r",
-											"pm.test(\"Response body is empty or contains success message\", function () {\r",
-											"    var jsonData = pm.response.json();\r",
-											"    pm.expect(jsonData).to.be.an(\"object\");\r",
+											"pm.test(\"Response body has message property\", function () {\r",
+											"    pm.expect(pm.response.json()).to.have.property('message');\r",
 											"});\r",
 											""
 										],
@@ -2661,6 +2807,107 @@
 								}
 							],
 							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/ticket/{{cancelTicket}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"ticket",
+										"{{cancelTicket}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "CANCEL TICKET WITH AUTH",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.sendRequest({\r",
+											"    url: pm.collectionVariables.get(\"base_url\") + \"/ticket/buy\",\r",
+											"    method: \"POST\",\r",
+											"    header: {\r",
+											"        \"Content-Type\": \"application/json\"\r",
+											"    },\r",
+											"    body: {\r",
+											"        mode: \"raw\",\r",
+											"        raw: JSON.stringify({\r",
+											"            \"Presentation_idPresentation\": 123,\r",
+											"            \"User_idUser\": \"456\",\r",
+											"            \"isRedeemed\": false,\r",
+											"            \"isActive\": true\r",
+											"        })\r",
+											"    }\r",
+											"}, function (err, res) {\r",
+											"    if (err) {\r",
+											"        console.log(\"Error en la solicitud:\", err);\r",
+											"    } else {\r",
+											"        let responseData = res.json();\r",
+											"        if (res.code === 201 && responseData._id) {\r",
+											"            pm.collectionVariables.set(\"cancelTicket\", responseData._id);\r",
+											"            console.log(\"Ticket creado con éxito:\", responseData._id);\r",
+											"        } else {\r",
+											"            console.log(\"Error al crear ticket:\", responseData);\r",
+											"        }\r",
+											"    }\r",
+											"});\r",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Test for the status code\r",
+											"pm.test(\"Status code is 200\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"// Test for the response body properties\r",
+											"pm.test(\"Response contains message and ticket properties\", function () {\r",
+											"    pm.response.to.have.jsonBody('message');\r",
+											"    pm.response.to.have.jsonBody('ticket');\r",
+											"});\r",
+											"\r",
+											"// Test for specific properties of the ticket object\r",
+											"pm.test(\"Ticket object has specific properties\", function () {\r",
+											"    pm.response.to.have.jsonBody('ticket._id');\r",
+											"    pm.response.to.have.jsonBody('ticket.buyDate');\r",
+											"    pm.response.to.have.jsonBody('ticket.Presentation_idPresentation');\r",
+											"    pm.response.to.have.jsonBody('ticket.User_idUser');\r",
+											"    pm.response.to.have.jsonBody('ticket.isRedeemed');\r",
+											"    pm.response.to.have.jsonBody('ticket.isActive');\r",
+											"    pm.response.to.have.jsonBody('ticket.__v');\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "string"
+										}
+									]
+								},
 								"method": "DELETE",
 								"header": [],
 								"url": {
@@ -2750,7 +2997,7 @@
 		},
 		{
 			"key": "cancelTicket",
-			"value": ""
+			"value": "67ec1d4709b1ab2f504cfed6"
 		},
 		{
 			"key": "userId",
