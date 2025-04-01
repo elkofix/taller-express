@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "cd3b5cdd-a09d-47ed-8169-01ae1e086074",
+		"_postman_id": "a5cfa282-3727-482a-a211-6eb7d47918e8",
 		"name": "Integration Test Express",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "38823104"
+		"_exporter_id": "38775841"
 	},
 	"item": [
 		{
@@ -1789,110 +1789,6 @@
 								}
 							},
 							"response": []
-						},
-						{
-							"name": "FIND EVENT BY ID Copy",
-							"event": [
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											"// Autenticación\r",
-											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
-											"const email = pm.collectionVariables.get(\"eventmanageEmail\");\r",
-											"const password = pm.collectionVariables.get(\"password\");\r",
-											"\r",
-											"const authUrl = `${baseUrl}/auth/login`;\r",
-											"\r",
-											"// Solo realizar la autenticación si no hay token o si ha expirado\r",
-											"    pm.sendRequest({\r",
-											"        url: authUrl,\r",
-											"        method: \"POST\",\r",
-											"        header: {\r",
-											"            \"Content-Type\": \"application/json\"\r",
-											"        },\r",
-											"        body: {\r",
-											"            mode: \"raw\",\r",
-											"            raw: JSON.stringify({\r",
-											"                email: email,\r",
-											"                password: password\r",
-											"            })\r",
-											"        }\r",
-											"    }, function (err, res) {\r",
-											"        if (err) {\r",
-											"            console.log(\"Error en la solicitud:\", err);\r",
-											"        } else {\r",
-											"            const token = res.json().token;\r",
-											"            \r",
-											"            if (token) {\r",
-											"                pm.collectionVariables.set(\"token\", token);\r",
-											"                console.log(\"Token guardado:\", token);\r",
-											"            } else {\r",
-											"                console.log(\"No se encontró un token en la respuesta.\");\r",
-											"            }\r",
-											"        }\r",
-											"    });\r",
-											"\r",
-											"\r",
-											"// Guardar el ID del evento que estás buscando para uso en tests\r",
-											"pm.collectionVariables.set(\"eventId\", \"67e9c22529f77cca654dbefd\");\r",
-											"\r",
-											"console.log(\"Buscando evento con ID:\", pm.collectionVariables.get(\"eventId\"));"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								},
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"// Test for status code\r",
-											"pm.test(\"Status code is 403\", function () {\r",
-											"    pm.response.to.have.status(403);\r",
-											"});\r",
-											"\r",
-											"\r",
-											"// Test for specific message in the response body\r",
-											"pm.test(\"Response body contains specific message\", function () {\r",
-											"    pm.expect(pm.response.json().message).to.include(\"Access denied. Event managers can only v\");\r",
-											"});\r",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"protocolProfileBehavior": {
-								"disableCookies": true
-							},
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{token}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "{{base_url}}/events/findEvent/{{eventId}}",
-									"host": [
-										"{{base_url}}"
-									],
-									"path": [
-										"events",
-										"findEvent",
-										"{{eventId}}"
-									]
-								}
-							},
-							"response": []
 						}
 					]
 				},
@@ -1907,12 +1803,11 @@
 									"script": {
 										"exec": [
 											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
-											"const email = pm.collectionVariables.get(\"superadminEmail\");\r",
+											"const email = \"isabella.ocampo@u.icesi.edu.co\";\r",
 											"const password = pm.collectionVariables.get(\"password\");\r",
 											"\r",
 											"const authUrl = `${baseUrl}/auth/login`;\r",
 											"\r",
-											"if (!pm.collectionVariables.get(\"token\")) {\r",
 											"    pm.sendRequest({\r",
 											"        url: authUrl,\r",
 											"        method: \"POST\",\r",
@@ -1937,7 +1832,7 @@
 											"            }\r",
 											"        }\r",
 											"    });\r",
-											"}\r",
+											"\r",
 											"pm.collectionVariables.set(\"eventId\",\"67e9c22529f77cca654dbefd\");\r",
 											""
 										],
@@ -2974,27 +2869,25 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"// Test for the status code\r",
 											"pm.test(\"Status code is 200\", function () {\r",
 											"    pm.response.to.have.status(200);\r",
 											"});\r",
 											"\r",
-											"// Test for the response body properties\r",
-											"pm.test(\"Response contains message and ticket properties\", function () {\r",
-											"    pm.response.to.have.jsonBody('message');\r",
-											"    pm.response.to.have.jsonBody('ticket');\r",
+											"pm.test(\"Ticket successfully canceled message is received\", function () {\r",
+											"    pm.expect(pm.response.json().message).to.eql(\"Ticket successfully canceled\");\r",
 											"});\r",
 											"\r",
-											"// Test for specific properties of the ticket object\r",
-											"pm.test(\"Ticket object has specific properties\", function () {\r",
-											"    pm.response.to.have.jsonBody('ticket._id');\r",
-											"    pm.response.to.have.jsonBody('ticket.buyDate');\r",
-											"    pm.response.to.have.jsonBody('ticket.Presentation_idPresentation');\r",
-											"    pm.response.to.have.jsonBody('ticket.User_idUser');\r",
-											"    pm.response.to.have.jsonBody('ticket.isRedeemed');\r",
-											"    pm.response.to.have.jsonBody('ticket.isActive');\r",
-											"    pm.response.to.have.jsonBody('ticket.__v');\r",
-											"});"
+											"pm.test(\"Canceled ticket details are correct\", function () {\r",
+											"    var canceledTicket = pm.response.json().canceledTicket;\r",
+											"    pm.expect(canceledTicket._id).to.be.a('string');\r",
+											"    pm.expect(canceledTicket.buyDate).to.be.a('string');\r",
+											"    pm.expect(canceledTicket.Presentation_idPresentation).to.be.a('number');\r",
+											"    pm.expect(canceledTicket.User_idUser).to.be.a('number');\r",
+											"    pm.expect(canceledTicket.isRedeemed).to.be.false;\r",
+											"    pm.expect(canceledTicket.isActive).to.be.false;\r",
+											"    pm.expect(canceledTicket.__v).to.be.a('number');\r",
+											"});\r",
+											""
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -3111,6 +3004,11 @@
 		{
 			"key": "ticketId",
 			"value": "67e9da50ac19f247480c42e4",
+			"type": "string"
+		},
+		{
+			"key": "eventEmail",
+			"value": "user_gya66uee@example.com",
 			"type": "string"
 		}
 	]
