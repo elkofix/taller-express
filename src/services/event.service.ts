@@ -79,6 +79,7 @@ class EventService {
             
             return updatedEvent;
         } catch (error) {
+            console.error(`Error updating event with id ${id}:`, error);
             throw error;
         }
     }

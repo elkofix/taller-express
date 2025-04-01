@@ -1909,13 +1909,14 @@
 									"listen": "prerequest",
 									"script": {
 										"exec": [
+											"console.log(\"d\")\r",
 											"const baseUrl = pm.collectionVariables.get(\"base_url\");\r",
 											"const email = pm.collectionVariables.get(\"userEmail\");\r",
 											"const password = pm.collectionVariables.get(\"password\");\r",
 											"\r",
 											"const authUrl = `${baseUrl}/auth/login`;\r",
 											"\r",
-											"if (!pm.collectionVariables.get(\"token\")) {\r",
+											"\r",
 											"    pm.sendRequest({\r",
 											"        url: authUrl,\r",
 											"        method: \"POST\",\r",
@@ -1940,7 +1941,7 @@
 											"            }\r",
 											"        }\r",
 											"    });\r",
-											"}\r",
+											"\r",
 											"pm.collectionVariables.set(\"eventId\",\"67e9c22529f77cca654dbefd\");\r",
 											""
 										],
